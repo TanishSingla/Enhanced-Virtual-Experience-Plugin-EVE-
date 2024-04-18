@@ -155,7 +155,6 @@ void AIkarusVRBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 		//LaserBeam
 		EnhancedInputComponent->BindAction(IA_LaserBeam,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeam);
-		EnhancedInputComponent->BindAction(IA_LaserBeamTriggerAxis,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeamAxis);
 	}
 }
 
@@ -272,16 +271,6 @@ void AIkarusVRBaseCharacter::HandleLaserBeam()
 	}
 }
 
-void AIkarusVRBaseCharacter::HandleLaserBeamAxis()
-{
-	if(bEnableLaserBeamTriggerAxis)
-	{
-		if(bEnableLaserBeam && IsValid(TeleportControllerRight))
-		{
-			TeleportControllerRight->OnLaserBeamActiveTriggerAxis();
-		}
-	}
-}
 
 
 bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransform WorldTransform,

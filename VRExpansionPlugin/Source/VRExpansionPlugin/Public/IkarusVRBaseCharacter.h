@@ -89,7 +89,6 @@ protected:
 	void HandleTurn(const FInputActionValue & InputAxis);
 	void HandleMove(const FInputActionValue & Input);
 	void HandleLaserBeam();
-	void HandleLaserBeamAxis();
 	
 	
 	//Components

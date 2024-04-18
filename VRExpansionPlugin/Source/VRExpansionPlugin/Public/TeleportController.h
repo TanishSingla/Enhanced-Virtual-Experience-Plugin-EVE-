@@ -84,9 +84,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
 	void RumbleController(float Intensity);
-
-	UFUNCTION(BlueprintCallable,Category="Laser Beam")
-	void OnLaserBeamActiveTriggerAxis();
 	
 	/**
 	 * Variables

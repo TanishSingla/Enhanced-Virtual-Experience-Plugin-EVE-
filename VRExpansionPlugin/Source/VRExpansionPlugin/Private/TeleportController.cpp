@@ -11,7 +11,7 @@
 #include "NavigationSystem.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IkarusVRBaseCharacter.h"
-#include "PhysicsTossManager.h"
+
 
 
 ATeleportController::ATeleportController()
@@ -350,20 +350,6 @@ void ATeleportController::RumbleController(float Intensity)
 	}
 }
 
-void ATeleportController::OnLaserBeamActiveTriggerAxis()
-{
-	// if((!PhysicsTossManager->IsThrowing()) && (bIsLaserBeamActive) && ( (UKismetMathLibrary::BooleanNOR(Wic->IsOverInteractableWidget(),Wic->IsOverFocusableWidget())) ))
-	// {
-	// 	if(IsValid(LaserHighlightingObject))
-	// 	{
-	// 		AIkarusVRBaseCharacter * IkarusCharacter = Cast<AIkarusVRBaseCharacter>(OwningMotionController->GetOwner());
-	// 		if(IsValid(IkarusCharacter))
-	// 		{
-	// 			IkarusCharacter->NotifyServerOfTossRequest(false,LaserHighlightingObject);
-	// 		}
-	// 	}
-	// }
-}
 
 void ATeleportController::Tick(float DeltaTime)
 {
