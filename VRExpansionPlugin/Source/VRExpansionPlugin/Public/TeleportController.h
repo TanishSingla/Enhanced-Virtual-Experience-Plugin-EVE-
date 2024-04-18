@@ -185,8 +185,12 @@ private:
 	 * Variables
 	 */
 
+	// Material Instances Variables :- 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	UMaterialInstance * TeleportSplineStartingMaterial = NULL;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UMaterialInstance * SmoothLaserBeamMaterial = NULL;
 	
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	float RumbleControllerIntensity = 0.0f;

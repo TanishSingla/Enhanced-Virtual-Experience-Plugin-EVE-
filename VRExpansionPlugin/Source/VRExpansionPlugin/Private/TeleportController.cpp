@@ -495,6 +495,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 		{
 			LaserBeam->SetWorldLocation(TeleWorldLoc);
 			LaserBeam->SetRelativeRotation(ControllerRotationOffset);
+			
 			if(bWasHit)
 			{
 				FVector Scale = FVector(LastLaserHitResult.Time * LaserBeamMaxDistance, 1.f, 1.f);
@@ -527,6 +528,8 @@ void ATeleportController::CreateLaserSpline()
 			
 			NewMesh->SetStaticMesh(BaseSplineMesh);
 			NewMesh->RegisterComponent();
+			NewMesh->SetMaterial(0, SmoothLaserBeamMaterial);
+			
 			MID = NewMesh->CreateDynamicMaterialInstance(0);
 			float Time = 1;
 			if(i==0)Time = 0;
