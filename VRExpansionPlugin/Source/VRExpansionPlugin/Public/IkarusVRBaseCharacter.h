@@ -486,6 +486,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Climbing | Variables",Meta=(ToolTip = "If Enabled will allow Snapping/Turning on Climbing."))
 	bool bEnableSnappingWhileClimbing = false;
 	
+	UFUNCTION(BlueprintCallable)
+	FString CheckXRApi();
 	
 	// Print function.
 	void Print(FString Message,int key = 1 ,FColor Color  =FColor::Red,float TimeToDisplay=3);

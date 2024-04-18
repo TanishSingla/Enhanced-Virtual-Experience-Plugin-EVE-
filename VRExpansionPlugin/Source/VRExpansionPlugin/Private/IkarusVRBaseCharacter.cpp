@@ -6,6 +6,7 @@
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "IXRTrackingSystem.h"
 #include "VRExpansionFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -1841,6 +1842,23 @@ void AIkarusVRBaseCharacter::ExitClimbing()
 		ClimbGripLocation = FVector(0,0,0);
 		ClimbingGrip = nullptr;
 	}
+}
+
+FString AIkarusVRBaseCharacter::CheckXRApi()
+{
+	if (GEngine)
+	{
+		auto XRSystem = GEngine->XRSystem;
+		if (XRSystem.IsValid() && XRSystem->GetSystemName().ToString().Contains("OpenXR"))
+		{
+			return TEXT("OpenXR");
+		}
+		else if (XRSystem.IsValid() && XRSystem->GetSystemName().ToString().Contains("Oculus"))
+		{
+			return TEXT("Meta XR");
+		}
+	}
+	return TEXT("Unknown");
 }
 
 // Print Functions...
