@@ -35,6 +35,9 @@ public:
 
 	UFUNCTION()
 	void NotifyServerOfTossRequest(bool LeftHand,UPrimitiveComponent * TargetPrim);
+
+	UFUNCTION()
+	void UpdateClimbingMovement_Binding();
 	
 private:
 
@@ -172,31 +175,6 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | CharacterMovement | Teleportation")
 	float TeleportThumbDeadZone = 0.4f;
-
-	
-	/* ---------Functions---------- */
-	
-	
-	/* *********************************************************************************  */
-	// Grabbing Functions (temporary)
-	
-	// UPrimitiveComponent * LeftHitComp = NULL;
-	// UPrimitiveComponent * RightHitComp = NULL;
-	//
-	// UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Grabbing")
-	//  TEnumAsByte<ETraceTypeQuery> CollisionChannel ;
-	//
-	// UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Grabbing")
-	// float SphereTraceRadius = 8.0f;
-	//
-	// UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Grabbing")
-	// float EndTraceValue = 0;
-	//
-	// UFUNCTION(BlueprintCallable)
-	// void TryToGrabAndDrop(UGripMotionControllerComponent * CallingHand,bool bGrip,USphereComponent * GrabSphere,UGripMotionControllerComponent *OtherHand,bool bIsLeft	);
-	//
-	// UFUNCTION(BlueprintCallable)
-	// void TryToDrop(UGripMotionControllerComponent * CallingHand,UObject * GrippedObject = NULL);
 
 	//Variables
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing")

@@ -1269,6 +1269,8 @@ void UVRBaseCharacterMovementComponent::PhysCustom_Climbing(float deltaTime, int
 		}
 	}*/
 
+	
+	PhysCustom_ClimbingDelegate.Broadcast();
 
 	// I am forcing this to 0 to avoid some legacy velocity coming out of other movement modes, climbing should only be direct movement anyway.
 	Velocity = FVector::ZeroVector;

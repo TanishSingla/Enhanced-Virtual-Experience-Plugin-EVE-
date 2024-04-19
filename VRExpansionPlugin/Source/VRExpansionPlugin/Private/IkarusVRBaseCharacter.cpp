@@ -114,6 +114,8 @@ void AIkarusVRBaseCharacter::BeginPlay()
 
 	//Inputs Mapping.
 	MapInput(VRInputMapping,0);
+
+	VRMovementReference->PhysCustom_ClimbingDelegate.AddDynamic(this, &ThisClass::UpdateClimbingMovement_Binding);
 		
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(TrackingOrigin);
 	UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(SpectatorScreenMode);
@@ -1326,6 +1328,7 @@ bool AIkarusVRBaseCharacter::GripOrDropObjectClean(UGripMotionControllerComponen
 		ESecondaryGripType OutSecGripType = ESecondaryGripType::SG_None ;
 		CanAttemptSecondaryGrabOnObject(NearestObject,OutbCanAttemptSeccondaryGrab,OutSecGripType);
 		if(OutbCanAttemptSeccondaryGrab)
+		if(OutbCanAttemptSeccondaryGrab)
 		{
 			//checks if secondary grip is valid or not
 			SecondaryGripType = OutSecGripType;
@@ -1503,6 +1506,21 @@ void AIkarusVRBaseCharacter::NotifyServerOfTossRequest(bool LeftHand, UPrimitive
 	}
 }
 
+void AIkarusVRBaseCharacter::UpdateClimbingMovement_Binding()
+{
+	if(bIsClimbing)
+	{
+		if(ClimbingHand && ClimbingGrip)
+		{
+			const FVector MovementVector = UKismetMathLibrary::NegateVector(
+				ClimbingHand->GetComponentLocation() -
+				UKismetMathLibrary::TransformLocation(ClimbingGrip->GetComponentTransform(), ClimbGripLocation));
+			
+			VRMovementReference->AddCustomReplicatedMovement(MovementVector);
+		}
+	}
+}
+
 void AIkarusVRBaseCharacter::SpawnController()
 	{
 	
@@ -1619,76 +1637,79 @@ void AIkarusVRBaseCharacter::UpdateTeleportationRotations(FVector2D Input)
 }
 
 void AIkarusVRBaseCharacter::SetTeleportActive(EControllerHand Hand, bool Active)
+{
+	if (Hand == EControllerHand::Left)
 	{
-		if(Hand == EControllerHand::Left)
+		if (TeleportControllerLeft && Active)
 		{
-			if(TeleportControllerLeft && Active)
-			{
-				TeleportControllerLeft->ActivateTeleporter();
-			}else
-			{
-				TeleportControllerLeft->DeactivateTeleporter();
-			}
+			TeleportControllerLeft->ActivateTeleporter();
 		}
-		else if(Hand == EControllerHand::Right)
+		else
 		{
-			if(TeleportControllerRight && Active)
-			{
-				TeleportControllerRight->ActivateTeleporter();
-			}else
-			{
-				TeleportControllerRight->DeactivateTeleporter();
-			}
-		}
-		NotifyTeleportActive(Hand,Active);
-	}
-
-	void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionController,EControllerHand Hand)
-	{
-		if(!IsTeleporting)
-		{
-			VRMovementReference->StopMovementImmediately();
-
-				if(MotionController->IsValidTeleportDestination)
-			{
-				IsTeleporting = true;
-				APlayerCameraManager *CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(),0);
-				CameraManager->StartCameraFade(0.f,1.f,FadeOutDuration,TeleportFadeColor,false,true);
-
-				
-				FVector TeleportLocation;
-				FRotator TeleportRotation;
-				MotionController->GetTeleportDestination(false,TeleportLocation,TeleportRotation);
-
-				FVector OutLocation;
-				FRotator OutRotation;
-				GetCharacterRotatedPosition(GetTeleportLocation(TeleportLocation),TeleportRotation,GetVRLocation(),OutLocation,OutRotation);
-
-				// UKismetSystemLibrary::Delay(GetWorld(),FadeOutDuration,);	
-				// UKismetSystemLibrary::Delay();
-				// GetWorldTimerManager().SetTimer(TimerHandle,this,&AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime,FadeOutDuration,false);
-				SetTeleportActive(Hand,false);
-				VRMovementReference->PerformMoveAction_Teleport(OutLocation,OutRotation);
-
-				CameraManager->StartCameraFade(0.f,1.f,FadeOutDuration,TeleportFadeColor,false,false);
-				IsTeleporting = false;
-			}else
-			{
-				SetTeleportActive(Hand,false);
-			}
+			TeleportControllerLeft->DeactivateTeleporter();
 		}
 	}
-
-	void AIkarusVRBaseCharacter::GetCharacterRotatedPosition(FVector OriginalLocation,FRotator DeltaRotation,FVector PivotPoint,FVector &OutLocation,FRotator &OutRotation)
+	else if (Hand == EControllerHand::Right)
 	{
-		PivotPoint = UKismetMathLibrary::InverseTransformLocation(GetActorTransform(),PivotPoint);
-		UVRExpansionFunctionLibrary::RotateAroundPivot(DeltaRotation,OriginalLocation,GetCorrectRotation(),PivotPoint,OutLocation,OutRotation,true);
+		if (TeleportControllerRight && Active)
+		{
+			TeleportControllerRight->ActivateTeleporter();
+		}
+		else
+		{
+			TeleportControllerRight->DeactivateTeleporter();
+		}
 	}
+	NotifyTeleportActive(Hand, Active);
+}
 
-	FRotator AIkarusVRBaseCharacter::GetCorrectRotation()
+void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionController, EControllerHand Hand)
+{
+	if (!IsTeleporting)
 	{
-		return bUseControllerRotationYaw==true ? GetControlRotation():GetActorRotation();
+		VRMovementReference->StopMovementImmediately();
+
+		if (MotionController->IsValidTeleportDestination)
+		{
+			IsTeleporting = true;
+			APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+			CameraManager->StartCameraFade(0.f, 1.f, FadeOutDuration, TeleportFadeColor, false, true);
+
+
+			FVector TeleportLocation;
+			FRotator TeleportRotation;
+			MotionController->GetTeleportDestination(false, TeleportLocation, TeleportRotation);
+
+			FVector OutLocation;
+			FRotator OutRotation;
+			GetCharacterRotatedPosition(GetTeleportLocation(TeleportLocation), TeleportRotation, GetVRLocation(), OutLocation, OutRotation);
+
+			// UKismetSystemLibrary::Delay(GetWorld(),FadeOutDuration,);	
+			// UKismetSystemLibrary::Delay();
+			// GetWorldTimerManager().SetTimer(TimerHandle,this,&AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime,FadeOutDuration,false);
+			SetTeleportActive(Hand, false);
+			VRMovementReference->PerformMoveAction_Teleport(OutLocation, OutRotation);
+
+			CameraManager->StartCameraFade(0.f, 1.f, FadeOutDuration, TeleportFadeColor, false, false);
+			IsTeleporting = false;
+		}
+		else
+		{
+			SetTeleportActive(Hand, false);
+		}
 	}
+}
+
+void AIkarusVRBaseCharacter::GetCharacterRotatedPosition(FVector OriginalLocation, FRotator DeltaRotation, FVector PivotPoint, FVector & OutLocation, FRotator & OutRotation)
+{
+	PivotPoint = UKismetMathLibrary::InverseTransformLocation(GetActorTransform(), PivotPoint);
+	UVRExpansionFunctionLibrary::RotateAroundPivot(DeltaRotation, OriginalLocation, GetCorrectRotation(), PivotPoint, OutLocation, OutRotation, true);
+}
+
+FRotator AIkarusVRBaseCharacter::GetCorrectRotation()
+{
+	return bUseControllerRotationYaw == true ? GetControlRotation() : GetActorRotation();
+}
 
 void AIkarusVRBaseCharacter::NotifyTeleportActive(EControllerHand  Hand,bool State)
 {

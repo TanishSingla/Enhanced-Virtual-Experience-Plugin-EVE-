@@ -16,6 +16,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogVRBaseCharacterMovement, Log, All);
 
 /** Delegate for notification when to handle a climbing step up, will override default step up logic if is bound to. */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FVROnPerformClimbingStepUp, FVector, FinalStepUpLocation);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FVRPhysCustom_Climbing);
 
 /*
 * The base class for our VR characters, contains common logic across them, not to be used directly
@@ -286,7 +287,13 @@ public:
 	}
 
 	virtual void PhysCustom(float deltaTime, int32 Iterations) override;
+
+	UFUNCTION()
 	virtual void PhysCustom_Climbing(float deltaTime, int32 Iterations);
+
+	UPROPERTY(BlueprintAssignable)
+	FVRPhysCustom_Climbing PhysCustom_ClimbingDelegate;
+	
 	virtual void PhysCustom_LowGrav(float deltaTime, int32 Iterations);
 
 	// Teleport grips on correction to fixup issues
