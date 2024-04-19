@@ -38,7 +38,7 @@ public:
 	void CreateLaserSpline();
 
 	UFUNCTION(BlueprintCallable)
-	bool IfOverWidget_Use(bool bPressed);
+	bool IfOverWidgetUse(bool bPressed);
 
 	UFUNCTION(BlueprintCallable)
 	void InitController();

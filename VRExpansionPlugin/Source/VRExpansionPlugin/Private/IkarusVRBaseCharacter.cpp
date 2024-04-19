@@ -156,6 +156,9 @@ void AIkarusVRBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 		//LaserBeam
 		EnhancedInputComponent->BindAction(IA_LaserBeam,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeam);
+		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::RightTriggerStarted);
+		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::RightTriggeredCompleted);
+		
 	}
 }
 
@@ -272,6 +275,29 @@ void AIkarusVRBaseCharacter::HandleLaserBeam()
 	}
 }
 
+void AIkarusVRBaseCharacter::RightTriggerStarted()
+{
+	bool Check = IfOverWidgetUse(RightMotionController,true);
+	if(!Check)
+	{
+		CheckUseHeldItems(RightMotionController,true);
+		bool OutDropped = false;
+		bool OutHadSecondary = false;
+		CheckUseSecondaryAttachment(RightMotionController,LeftMotionController,true,OutDropped,OutHadSecondary);
+	}
+}
+
+void AIkarusVRBaseCharacter::RightTriggeredCompleted()
+{
+	bool Check = IfOverWidgetUse(RightMotionController,false);
+	if(!Check)
+	{
+		CheckUseHeldItems(RightMotionController,false);
+		bool OutDropped = false;
+		bool OutHadSecondary = false;
+		CheckUseSecondaryAttachment(RightMotionController,LeftMotionController,false,OutDropped,OutHadSecondary);
+	}
+}
 
 
 bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransform WorldTransform,
@@ -1860,6 +1886,28 @@ FString AIkarusVRBaseCharacter::CheckXRApi()
 	}
 	return TEXT("Unknown");
 }
+
+bool AIkarusVRBaseCharacter::IfOverWidgetUse(UGripMotionControllerComponent * CallingHand,bool Pressed)
+{
+	EControllerHand Hand;
+	CallingHand->GetHandType(Hand);
+	if(Hand == EControllerHand::Left)
+	{
+		if(IsValid(TeleportControllerLeft))
+		{
+			return TeleportControllerLeft->IfOverWidgetUse(Pressed);
+		}
+	}
+	if(Hand == EControllerHand::Right)
+	{
+		if(IsValid(TeleportControllerRight))
+		{
+			return TeleportControllerRight->IfOverWidgetUse(Pressed);
+		}
+	}
+	return false;
+}
+
 
 // Print Functions...
 void AIkarusVRBaseCharacter::Print(FString Message,int key,FColor Color,float TimeToDisplay)

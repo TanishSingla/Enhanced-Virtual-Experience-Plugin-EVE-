@@ -66,7 +66,7 @@ protected:
 	UInputAction * IA_LaserBeam;
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
-	UInputAction * IA_LaserBeamTriggerAxis;
+	UInputAction * IA_RightTriggerAxis;
 
 	
 	
@@ -90,6 +90,11 @@ protected:
 	void HandleMove(const FInputActionValue & Input);
 	void HandleLaserBeam();
 	
+	UFUNCTION(BlueprintCallable)
+	void RightTriggerStarted();
+
+	UFUNCTION(BlueprintCallable)
+	void RightTriggeredCompleted();
 	
 	//Components
 	
@@ -485,9 +490,15 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Climbing | Variables",Meta=(ToolTip = "If Enabled will allow Snapping/Turning on Climbing."))
 	bool bEnableSnappingWhileClimbing = false;
-	
+
+	/*   */
 	UFUNCTION(BlueprintCallable)
 	FString CheckXRApi();
+
+	/*   Widget Interaction  */
+	UFUNCTION(BlueprintCallable)
+	bool IfOverWidgetUse(UGripMotionControllerComponent * CallingHand,bool Pressed);
+	
 	
 	// Print function.
 	void Print(FString Message,int key = 1 ,FColor Color  =FColor::Red,float TimeToDisplay=3);

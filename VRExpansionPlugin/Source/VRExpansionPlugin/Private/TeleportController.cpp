@@ -546,7 +546,7 @@ void ATeleportController::CreateLaserSpline()
 	}
 }
 
-bool ATeleportController::IfOverWidget_Use(bool bPressed)
+bool ATeleportController::IfOverWidgetUse(bool bPressed)
 {
 	if(bIsLaserBeamActive)
 	{
