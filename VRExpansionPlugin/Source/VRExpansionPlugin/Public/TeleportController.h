@@ -83,12 +83,18 @@ public:
 	void GetTeleportDestination(bool RelativeToHMD, FVector& Location, FRotator& Rotation);
 
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
-	void RumbleController(float Intensity);
+	void RumbleController(UHapticFeedbackEffect_Base * HapticEff,float Intensity = 1.0f);
 	
 	/**
 	 * Variables
 	 */
 
+	UPROPERTY()
+	AActor * PreviousFrameHitActor = nullptr;
+
+	UPROPERTY()
+	AActor* CurrentFrameHitActor = nullptr;
+	
 	UPROPERTY(EditDefaultsOnly,Category = "LaserBeam")
 	float LaserBeamTraceOffset;
 	
@@ -104,7 +110,7 @@ public:
 	UPROPERTY(BlueprintReadWrite,Category = "Defaults")
 	bool bLastFrameValidDestination = false;
 	
-	UPROPERTY(BlueprintReadWrite,Category = "Defaults")
+	UPROPERTY(BlueprintReadOnly,Category = "Defaults")
 	bool IsValidTeleportDestination;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components, meta = (ExposeOnSpawn = "True"))
@@ -193,10 +199,10 @@ private:
 	UMaterialInstance * SmoothLaserBeamMaterial = NULL;
 	
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float RumbleControllerIntensity = 0.0f;
+	float RumbleControllerIntensity = 1.0f;
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	UHapticFeedbackEffect_Base *HapticEffect;
+	UHapticFeedbackEffect_Base * HapticEffect = nullptr;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	FVector TraceEndLocation = FVector(0,0,-200.0);
