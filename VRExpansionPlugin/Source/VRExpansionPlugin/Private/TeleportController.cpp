@@ -546,14 +546,15 @@ void ATeleportController::CreateLaserSpline()
 	}
 }
 
-bool ATeleportController::IfOverWidgetUse(bool bPressed)
+bool ATeleportController::IfOverWidgetUse(bool bPressed,bool bIsHandInteracting)
 {
-	if(bIsLaserBeamActive)
+	if(bIsLaserBeamActive || bIsHandInteracting)
 	{
-		if(Wic->IsOverInteractableWidget() || Wic->IsOverFocusableWidget())
+		if(Wic->IsOverInteractableWidget() || Wic->IsOverFocusableWidget() || bIsHandInteracting)
 		{
 			if(bPressed)
 			{
+				Print("CPP IfOverWidgetUseFunction Called");
 				Wic->PressPointerKey(EKeys::LeftMouseButton);
 				return UKismetMathLibrary::BooleanOR(Wic->IsOverInteractableWidget(), Wic->IsOverFocusableWidget());
 			}
@@ -563,15 +564,10 @@ bool ATeleportController::IfOverWidgetUse(bool bPressed)
 				return UKismetMathLibrary::BooleanOR(Wic->IsOverInteractableWidget(), Wic->IsOverFocusableWidget());
 			}
 		}
-		else
-		{
-			return false;
-		}
 	}
-	else
-	{
+	
 		return false;
-	}
+	
 }
 
 void ATeleportController::InitController()

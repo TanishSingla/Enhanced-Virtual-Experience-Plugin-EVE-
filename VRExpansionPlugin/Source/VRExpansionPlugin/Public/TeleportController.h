@@ -38,7 +38,7 @@ public:
 	void CreateLaserSpline();
 
 	UFUNCTION(BlueprintCallable)
-	bool IfOverWidgetUse(bool bPressed);
+	bool IfOverWidgetUse(bool bPressed,bool bIsHandInteracting=false);
 
 	UFUNCTION(BlueprintCallable)
 	void InitController();
@@ -124,7 +124,7 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	bool bIsLaserBeamActive = false;
-
+	
 	
 protected:
 	
