@@ -375,9 +375,11 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 	}
 	if(ImplementsInterface)
 	{
+		RumbleController(Hand,GrabHapticEffect,IntensityHapticEffect);
 		return (Hand->GripObjectByInterface(ObjectToTryToGrab,WorldTransform,true,GripBoneName,SlotName,bIsSlotGrip));
 	}
 		
+	RumbleController(Hand,GrabHapticEffect,IntensityHapticEffect);
 	return (Hand->GripObject(ObjectToTryToGrab,WorldTransform,true,SlotName,GripBoneName,EGripCollisionType::InteractiveCollisionWithPhysics,EGripLateUpdateSettings::NotWhenCollidingOrDoubleGripping,EGripMovementReplicationSettings::ForceClientSideMovement,2250.0,140.0,bIsSlotGrip));
 }
 
@@ -1463,6 +1465,16 @@ void AIkarusVRBaseCharacter::RemoveSecondaryGrip(UGripMotionControllerComponent*
 	UObject* GrippedActorToRemoveAttachment)
 {
 	Hand->RemoveSecondaryAttachmentPoint(GrippedActorToRemoveAttachment,0.25);
+}
+
+void AIkarusVRBaseCharacter::RumbleController(UGripMotionControllerComponent * Hand,UHapticFeedbackEffect_Base* HapticEff, float Intensity)
+{
+	if(IsValid(Hand))
+	{
+		EControllerHand currentHand;
+		Hand->GetHandType(currentHand);
+		(UGameplayStatics::GetPlayerController(GetWorld(),0))->PlayHapticEffect(HapticEff,currentHand,Intensity,false);
+	}
 }
 
 void AIkarusVRBaseCharacter::OnRightGrabSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

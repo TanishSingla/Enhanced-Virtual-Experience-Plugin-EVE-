@@ -204,6 +204,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	UHapticFeedbackEffect_Base * HapticEffect = nullptr;
 	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UHapticFeedbackEffect_Base * LaserHapticEffect = nullptr;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	FVector TraceEndLocation = FVector(0,0,-200.0);
 	

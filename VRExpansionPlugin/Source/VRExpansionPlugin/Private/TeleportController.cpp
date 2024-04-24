@@ -381,10 +381,10 @@ void ATeleportController::Tick(float DeltaTime)
 
 		//Sequence 1
 		//Rumble Controller when valid teleport controller found.
-		if((IsValidTeleportDestination && !bLastFrameValidDestination) || (!IsValidTeleportDestination && bLastFrameValidDestination))
-		{
-			RumbleController(HapticEffect,RumbleControllerIntensity);
-		}
+		// if((IsValidTeleportDestination && !bLastFrameValidDestination) || (!IsValidTeleportDestination && bLastFrameValidDestination))
+		// {
+		// 	RumbleController(HapticEffect,RumbleControllerIntensity);
+		// }
 
 		//Sequence 2
 		bLastFrameValidDestination = bSuccess;
@@ -492,7 +492,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 
 				if(CurrentFrameHitActor!=nullptr && CurrentFrameHitActor->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass()))
 				{
-					RumbleController(HapticEffect,RumbleControllerIntensity);
+					RumbleController(LaserHapticEffect,RumbleControllerIntensity);
 				}
 			}
 			
@@ -528,7 +528,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 
 				if(CurrentFrameHitActor!=nullptr && CurrentFrameHitActor->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass()))
 				{
-					RumbleController(HapticEffect,RumbleControllerIntensity);
+					RumbleController(LaserHapticEffect,RumbleControllerIntensity);
 				}
 			}
 			LaserBeam->SetWorldLocation(TeleWorldLoc);

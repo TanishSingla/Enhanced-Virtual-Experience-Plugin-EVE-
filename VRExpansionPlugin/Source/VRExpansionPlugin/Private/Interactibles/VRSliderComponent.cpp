@@ -470,6 +470,7 @@ void UVRSliderComponent::CheckSliderProgress()
 
 			ReceiveSliderHitPoint(LastSliderProgressState);
 			OnSliderHitPoint.Broadcast(LastSliderProgressState);
+			//TODO# : haptics here
 			bHitEventThreshold = false;
 		}
 	}

@@ -174,6 +174,9 @@ public:
 		SetButtonToRestingPosition();
 	}
 
+	UPROPERTY(EditDefaultsOnly,Category="Haptics")
+	UHapticFeedbackEffect_Base * HapticEffect = nullptr;
+	
 protected:
 
 	// Control variables

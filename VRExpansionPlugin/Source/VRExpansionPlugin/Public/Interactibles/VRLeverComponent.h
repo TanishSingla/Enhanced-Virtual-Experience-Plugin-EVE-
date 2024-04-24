@@ -67,6 +67,10 @@ class VREXPANSIONPLUGIN_API UVRLeverComponent : public UStaticMeshComponent, pub
 	GENERATED_BODY()
 
 public:
+
+	UPROPERTY(EditDefaultsOnly , Category="Haptics")
+	UHapticFeedbackEffect_Base * HapticEffect = nullptr;
+	
 	UVRLeverComponent(const FObjectInitializer& ObjectInitializer);
 
 

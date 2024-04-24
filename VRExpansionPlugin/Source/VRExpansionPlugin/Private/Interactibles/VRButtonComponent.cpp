@@ -6,6 +6,8 @@
 #include "Net/UnrealNetwork.h"
 //#include "VRGripInterface.h"
 #include "GripMotionControllerComponent.h"
+#include "IkarusVRBaseCharacter.h"
+#include "TeleportController.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
 
@@ -129,6 +131,15 @@ void UVRButtonComponent::TickComponent(float DeltaTime, enum ELevelTick TickType
 						bButtonState = !bButtonState;
 						ReceiveButtonStateChanged(bButtonState, LocalLastInteractingActor.Get(), LocalLastInteractingComponent.Get());
 						OnButtonStateChanged.Broadcast(bButtonState, LocalLastInteractingActor.Get(), LocalLastInteractingComponent.Get());
+						AIkarusVRBaseCharacter * Character = Cast<AIkarusVRBaseCharacter>(LocalLastInteractingActor.Get());
+						if(IsValid(Character))
+						{
+							UGripMotionControllerComponent * Controller = Cast<UGripMotionControllerComponent>(LocalInteractingComponent.Get()->GetAttachParent());
+							if(IsValid(Controller))
+							{
+								Character->RumbleController(Controller,HapticEffect);
+							}
+						}
 					}
 				}
 			}
@@ -370,7 +381,7 @@ void UVRButtonComponent::SetButtonState(bool bNewButtonState, bool bCallButtonCh
 	// No change
 	if (bButtonState == bNewButtonState)
 		return;
-
+	
 	bButtonState = bNewButtonState;
 	SetButtonToRestingPosition(!bSnapIntoPosition);
 	LastToggleTime = GetWorld()->GetRealTimeSeconds();
@@ -379,6 +390,7 @@ void UVRButtonComponent::SetButtonState(bool bNewButtonState, bool bCallButtonCh
 	{
 		ReceiveButtonStateChanged(bButtonState, LocalLastInteractingActor.Get(), LocalLastInteractingComponent.Get());
 		OnButtonStateChanged.Broadcast(bButtonState, LocalLastInteractingActor.Get(), LocalLastInteractingComponent.Get());
+		
 	}
 }
 

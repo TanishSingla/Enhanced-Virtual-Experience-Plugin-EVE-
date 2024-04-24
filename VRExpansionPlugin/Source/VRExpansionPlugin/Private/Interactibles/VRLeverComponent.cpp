@@ -5,6 +5,7 @@
 
 #include "GripMotionControllerComponent.h"
 #include "VRExpansionFunctionLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
   //=============================================================================
@@ -137,7 +138,7 @@ void UVRLeverComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
 		{
 			bIsLerping = false;
 
-			// If we start lerping while locked, just end it
+			// If we start lerping while locked, just end i
 			OnLeverFinishedLerping.Broadcast(CurrentLeverAngle);
 			ReceiveLeverFinishedLerping(CurrentLeverAngle);
 		}
@@ -212,9 +213,21 @@ void UVRLeverComponent::ProccessCurrentState(bool bWasLerping, bool bThrowEvents
 	if (bNewLeverState != bLeverState)
 	{
 		bLeverState = bNewLeverState;
-
 		if (bThrowEvents && (bSendLeverEventsDuringLerp || !bWasLerping))
 		{
+		UGripMotionControllerComponent * Hand = Cast<UGripMotionControllerComponent>(HoldingGrip.HoldingController);
+		if(IsValid(Hand))
+		{
+			EControllerHand HandType;
+			Hand->GetHandType(HandType);
+			UGameplayStatics::GetPlayerController(GetWorld(),0)->PlayHapticEffect(HapticEffect,HandType,1,false);	
+			GEngine->AddOnScreenDebugMessage(1,5,FColor::Black,"Lever Comp 1");
+		}else
+			GEngine->AddOnScreenDebugMessage(1,5,FColor::Black,"Cast Failed");
+		{
+			
+		}
+			
 			ReceiveLeverStateChanged(bLeverState, FullCurrentAngle >= 0.0f ? EVRInteractibleLeverEventType::LeverPositive : EVRInteractibleLeverEventType::LeverNegative, CurrentLeverAngle, FullCurrentAngle);
 			OnLeverStateChanged.Broadcast(bLeverState, FullCurrentAngle >= 0.0f ? EVRInteractibleLeverEventType::LeverPositive : EVRInteractibleLeverEventType::LeverNegative, CurrentLeverAngle, FullCurrentAngle);
 		}
@@ -248,6 +261,7 @@ bool UVRLeverComponent::CheckAutoDrop(UGripMotionControllerComponent* GrippingCo
 		if (GrippingController->OnGripOutOfRange.IsBound())
 		{
 			uint8 GripID = GripInformation.GripID;
+			GEngine->AddOnScreenDebugMessage(2,5,FColor::Green,"Lever Comp 2");
 			GrippingController->OnGripOutOfRange.Broadcast(GripInformation, GripInformation.GripDistance);
 		}
 		else

@@ -38,6 +38,9 @@ public:
 
 	UFUNCTION()
 	void UpdateClimbingMovement_Binding();
+
+	UFUNCTION(BlueprintCallable, Category="Ikarus Character | Grabbing | Functions" )
+	void RumbleController(UGripMotionControllerComponent * Hand,UHapticFeedbackEffect_Base * HapticEff,float Intensity = 1.0f);
 	
 private:
 
@@ -332,14 +335,19 @@ protected:
 
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
 	bool GripOrDropObjectClean(UGripMotionControllerComponent * CallingMotionController,UGripMotionControllerComponent * OtherController,bool CanCheckClimb,UPrimitiveComponent * GrabSphere,FGameplayTagContainer RelevantGameplayTags);
-
-
+	
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
 	void TriggerGripOrDrop(UGripMotionControllerComponent *CallingHand,UGripMotionControllerComponent*OtherHand,bool isGrip,UPrimitiveComponent * GrabSphere);
 
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
 	void RemoveSecondaryGrip(UGripMotionControllerComponent*Hand,UObject * GrippedActorToRemoveAttachment);
 
+	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing | Variables")
+	UHapticFeedbackEffect_Base * GrabHapticEffect = nullptr;
+
+	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing | Variables")
+	float IntensityHapticEffect = 1.0f;
+	
 	/* *********************************************************************************  */
 	
 	//Overlapping
