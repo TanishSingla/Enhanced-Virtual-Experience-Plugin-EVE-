@@ -35,6 +35,12 @@ public:
 
 	UFUNCTION()
 	void NotifyServerOfTossRequest(bool LeftHand,UPrimitiveComponent * TargetPrim);
+
+	UFUNCTION()
+	void UpdateClimbingMovement_Binding();
+
+	UFUNCTION(BlueprintCallable, Category="Ikarus Character | Grabbing | Functions" )
+	void RumbleController(UGripMotionControllerComponent * Hand,UHapticFeedbackEffect_Base * HapticEff,float Intensity = 1.0f);
 	
 private:
 
@@ -66,7 +72,7 @@ protected:
 	UInputAction * IA_LaserBeam;
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
-	UInputAction * IA_LaserBeamTriggerAxis;
+	UInputAction * IA_RightTriggerAxis;
 
 	
 	
@@ -89,8 +95,12 @@ protected:
 	void HandleTurn(const FInputActionValue & InputAxis);
 	void HandleMove(const FInputActionValue & Input);
 	void HandleLaserBeam();
-	void HandleLaserBeamAxis();
 	
+	UFUNCTION(BlueprintCallable)
+	void RightTriggerStarted();
+
+	UFUNCTION(BlueprintCallable)
+	void RightTriggeredCompleted();
 	
 	//Components
 	
@@ -100,7 +110,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | Teleportation")
 	bool bEnableTeleportation = true;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | SmoothMovement")
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | Snapping")
 	bool bEnableCharacterSmoothMovement = true;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | Snapping")
@@ -168,31 +178,6 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | CharacterMovement | Teleportation")
 	float TeleportThumbDeadZone = 0.4f;
-
-	
-	/* ---------Functions---------- */
-	
-	
-	/* *********************************************************************************  */
-	// Grabbing Functions (temporary)
-	
-	// UPrimitiveComponent * LeftHitComp = NULL;
-	// UPrimitiveComponent * RightHitComp = NULL;
-	//
-	// UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Grabbing")
-	//  TEnumAsByte<ETraceTypeQuery> CollisionChannel ;
-	//
-	// UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Grabbing")
-	// float SphereTraceRadius = 8.0f;
-	//
-	// UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Grabbing")
-	// float EndTraceValue = 0;
-	//
-	// UFUNCTION(BlueprintCallable)
-	// void TryToGrabAndDrop(UGripMotionControllerComponent * CallingHand,bool bGrip,USphereComponent * GrabSphere,UGripMotionControllerComponent *OtherHand,bool bIsLeft	);
-	//
-	// UFUNCTION(BlueprintCallable)
-	// void TryToDrop(UGripMotionControllerComponent * CallingHand,UObject * GrippedObject = NULL);
 
 	//Variables
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing")
@@ -350,14 +335,19 @@ protected:
 
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
 	bool GripOrDropObjectClean(UGripMotionControllerComponent * CallingMotionController,UGripMotionControllerComponent * OtherController,bool CanCheckClimb,UPrimitiveComponent * GrabSphere,FGameplayTagContainer RelevantGameplayTags);
-
-
+	
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
 	void TriggerGripOrDrop(UGripMotionControllerComponent *CallingHand,UGripMotionControllerComponent*OtherHand,bool isGrip,UPrimitiveComponent * GrabSphere);
 
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
 	void RemoveSecondaryGrip(UGripMotionControllerComponent*Hand,UObject * GrippedActorToRemoveAttachment);
 
+	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing | Variables")
+	UHapticFeedbackEffect_Base * GrabHapticEffect = nullptr;
+
+	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing | Variables")
+	float IntensityHapticEffect = 1.0f;
+	
 	/* *********************************************************************************  */
 	
 	//Overlapping
@@ -486,6 +476,14 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Climbing | Variables",Meta=(ToolTip = "If Enabled will allow Snapping/Turning on Climbing."))
 	bool bEnableSnappingWhileClimbing = false;
+
+	/*   */
+	UFUNCTION(BlueprintCallable)
+	FString CheckXRApi();
+
+	/*   Widget Interaction  */
+	UFUNCTION(BlueprintCallable)
+	bool IfOverWidgetUse(UGripMotionControllerComponent * CallingHand,bool Pressed);
 	
 	
 	// Print function.

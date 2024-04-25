@@ -38,7 +38,7 @@ public:
 	void CreateLaserSpline();
 
 	UFUNCTION(BlueprintCallable)
-	bool IfOverWidget_Use(bool bPressed);
+	bool IfOverWidgetUse(bool bPressed,bool bIsHandInteracting=false);
 
 	UFUNCTION(BlueprintCallable)
 	void InitController();
@@ -83,15 +83,18 @@ public:
 	void GetTeleportDestination(bool RelativeToHMD, FVector& Location, FRotator& Rotation);
 
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
-	void RumbleController(float Intensity);
-
-	UFUNCTION(BlueprintCallable,Category="Laser Beam")
-	void OnLaserBeamActiveTriggerAxis();
+	void RumbleController(UHapticFeedbackEffect_Base * HapticEff,float Intensity = 1.0f);
 	
 	/**
 	 * Variables
 	 */
 
+	UPROPERTY()
+	AActor * PreviousFrameHitActor = nullptr;
+
+	UPROPERTY()
+	AActor* CurrentFrameHitActor = nullptr;
+	
 	UPROPERTY(EditDefaultsOnly,Category = "LaserBeam")
 	float LaserBeamTraceOffset;
 	
@@ -107,7 +110,7 @@ public:
 	UPROPERTY(BlueprintReadWrite,Category = "Defaults")
 	bool bLastFrameValidDestination = false;
 	
-	UPROPERTY(BlueprintReadWrite,Category = "Defaults")
+	UPROPERTY(BlueprintReadOnly,Category = "Defaults")
 	bool IsValidTeleportDestination;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components, meta = (ExposeOnSpawn = "True"))
@@ -127,7 +130,7 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	bool bIsLaserBeamActive = false;
-
+	
 	
 protected:
 	
@@ -188,14 +191,21 @@ private:
 	 * Variables
 	 */
 
+	// Material Instances Variables :- 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	UMaterialInstance * TeleportSplineStartingMaterial = NULL;
-	
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float RumbleControllerIntensity = 0.0f;
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	UHapticFeedbackEffect_Base *HapticEffect;
+	UMaterialInstance * SmoothLaserBeamMaterial = NULL;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	float RumbleControllerIntensity = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UHapticFeedbackEffect_Base * HapticEffect = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UHapticFeedbackEffect_Base * LaserHapticEffect = nullptr;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	FVector TraceEndLocation = FVector(0,0,-200.0);

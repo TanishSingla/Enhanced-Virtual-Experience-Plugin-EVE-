@@ -11,7 +11,7 @@
 #include "NavigationSystem.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IkarusVRBaseCharacter.h"
-#include "PhysicsTossManager.h"
+#include "Grippables/GrippableStaticMeshComponent.h"
 
 
 ATeleportController::ATeleportController()
@@ -340,30 +340,16 @@ void ATeleportController::GetTeleportDestination(bool RelativeToHMD, FVector& Lo
 	}
 }
 
-void ATeleportController::RumbleController(float Intensity)
+void ATeleportController::RumbleController(UHapticFeedbackEffect_Base * HapticEff,float Intensity)
 {
 	if(IsValid(OwningMotionController))
 	{
 		EControllerHand Hand;
 		OwningMotionController->GetHandType(Hand);
-		(UGameplayStatics::GetPlayerController(GetWorld(),0))->PlayHapticEffect(HapticEffect,Hand,Intensity,false);
+		(UGameplayStatics::GetPlayerController(GetWorld(),0))->PlayHapticEffect(HapticEff,Hand,Intensity,false);
 	}
 }
 
-void ATeleportController::OnLaserBeamActiveTriggerAxis()
-{
-	// if((!PhysicsTossManager->IsThrowing()) && (bIsLaserBeamActive) && ( (UKismetMathLibrary::BooleanNOR(Wic->IsOverInteractableWidget(),Wic->IsOverFocusableWidget())) ))
-	// {
-	// 	if(IsValid(LaserHighlightingObject))
-	// 	{
-	// 		AIkarusVRBaseCharacter * IkarusCharacter = Cast<AIkarusVRBaseCharacter>(OwningMotionController->GetOwner());
-	// 		if(IsValid(IkarusCharacter))
-	// 		{
-	// 			IkarusCharacter->NotifyServerOfTossRequest(false,LaserHighlightingObject);
-	// 		}
-	// 	}
-	// }
-}
 
 void ATeleportController::Tick(float DeltaTime)
 {
@@ -395,10 +381,10 @@ void ATeleportController::Tick(float DeltaTime)
 
 		//Sequence 1
 		//Rumble Controller when valid teleport controller found.
-		if((IsValidTeleportDestination && !bLastFrameValidDestination) || (!IsValidTeleportDestination && bLastFrameValidDestination))
-		{
-			RumbleController(RumbleControllerIntensity);
-		}
+		// if((IsValidTeleportDestination && !bLastFrameValidDestination) || (!IsValidTeleportDestination && bLastFrameValidDestination))
+		// {
+		// 	RumbleController(HapticEffect,RumbleControllerIntensity);
+		// }
 
 		//Sequence 2
 		bLastFrameValidDestination = bSuccess;
@@ -468,7 +454,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 
 		TArray<AActor*> ActorsToIgnore;
 		ActorsToIgnore.Add(OwningMotionController->GetOwner());
-			
+			  
 		const bool bWasHit = UKismetSystemLibrary::LineTraceSingle(GetWorld(), TeleWorldLoc,
 			(TeleForwardVec * LaserBeamMaxDistance) + TeleWorldLoc,
 			LaserBeamTraceChannel, false, ActorsToIgnore, EnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None,
@@ -491,6 +477,25 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 			LaserBeamTraceChannel, false, ActorsToIgnore,EnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None, TraceResult, true);
 
 			LaserBeamHitResult = TraceResult;
+			if(LaserBeamHitResult.GetActor())
+			{
+				CurrentFrameHitActor = LaserBeamHitResult.GetActor();
+			}
+			else
+			{
+				CurrentFrameHitActor = nullptr;
+			}
+
+			if(PreviousFrameHitActor != CurrentFrameHitActor)
+			{
+				PreviousFrameHitActor = CurrentFrameHitActor;
+
+				if(CurrentFrameHitActor!=nullptr && CurrentFrameHitActor->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass()))
+				{
+					RumbleController(LaserHapticEffect,RumbleControllerIntensity);
+				}
+			}
+			
 			if(bIsHit)
 			{
 				LastLaserHitResult = TraceResult;
@@ -507,8 +512,28 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 		// Straight Laser Logic
 		else
 		{
+			LaserBeamHitResult = LastLaserHitResult;
+			if(LaserBeamHitResult.GetActor())
+			{
+				CurrentFrameHitActor = LaserBeamHitResult.GetActor();
+			}
+			else
+			{
+				CurrentFrameHitActor = nullptr;
+			}
+
+			if(PreviousFrameHitActor != CurrentFrameHitActor)
+			{
+				PreviousFrameHitActor = CurrentFrameHitActor;
+
+				if(CurrentFrameHitActor!=nullptr && CurrentFrameHitActor->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass()))
+				{
+					RumbleController(LaserHapticEffect,RumbleControllerIntensity);
+				}
+			}
 			LaserBeam->SetWorldLocation(TeleWorldLoc);
 			LaserBeam->SetRelativeRotation(ControllerRotationOffset);
+			
 			if(bWasHit)
 			{
 				FVector Scale = FVector(LastLaserHitResult.Time * LaserBeamMaxDistance, 1.f, 1.f);
@@ -517,6 +542,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 				FVector LaserLoc = LastLaserHitResult.TraceStart + (UKismetMathLibrary::Normal(LastLaserHitResult.TraceStart - LastLaserHitResult.TraceEnd)) * LastLaserHitResult.Time * LaserBeamMaxDistance;
 				LaserBeamEndPoint->SetWorldLocation(LaserLoc);
 				LaserBeamEndPoint->SetHiddenInGame(false);
+				LaserHighlightingObject = LastLaserHitResult.Component.Get();
 			}
 			else
 			{
@@ -541,6 +567,8 @@ void ATeleportController::CreateLaserSpline()
 			
 			NewMesh->SetStaticMesh(BaseSplineMesh);
 			NewMesh->RegisterComponent();
+			NewMesh->SetMaterial(0, SmoothLaserBeamMaterial);
+			
 			MID = NewMesh->CreateDynamicMaterialInstance(0);
 			float Time = 1;
 			if(i==0)Time = 0;
@@ -557,11 +585,11 @@ void ATeleportController::CreateLaserSpline()
 	}
 }
 
-bool ATeleportController::IfOverWidget_Use(bool bPressed)
+bool ATeleportController::IfOverWidgetUse(bool bPressed,bool bIsHandInteracting)
 {
-	if(bIsLaserBeamActive)
+	if(bIsLaserBeamActive || bIsHandInteracting)
 	{
-		if(Wic->IsOverInteractableWidget() || Wic->IsOverFocusableWidget())
+		if(Wic->IsOverInteractableWidget() || Wic->IsOverFocusableWidget() || bIsHandInteracting)
 		{
 			if(bPressed)
 			{
@@ -574,15 +602,10 @@ bool ATeleportController::IfOverWidget_Use(bool bPressed)
 				return UKismetMathLibrary::BooleanOR(Wic->IsOverInteractableWidget(), Wic->IsOverFocusableWidget());
 			}
 		}
-		else
-		{
-			return false;
-		}
 	}
-	else
-	{
+	
 		return false;
-	}
+	
 }
 
 void ATeleportController::InitController()

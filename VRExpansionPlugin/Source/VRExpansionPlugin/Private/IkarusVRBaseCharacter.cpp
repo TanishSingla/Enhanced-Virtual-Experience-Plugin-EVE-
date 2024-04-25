@@ -6,6 +6,7 @@
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "IXRTrackingSystem.h"
 #include "VRExpansionFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -113,6 +114,8 @@ void AIkarusVRBaseCharacter::BeginPlay()
 
 	//Inputs Mapping.
 	MapInput(VRInputMapping,0);
+
+	VRMovementReference->PhysCustom_ClimbingDelegate.AddDynamic(this, &ThisClass::UpdateClimbingMovement_Binding);
 		
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(TrackingOrigin);
 	UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(SpectatorScreenMode);
@@ -155,7 +158,9 @@ void AIkarusVRBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 		//LaserBeam
 		EnhancedInputComponent->BindAction(IA_LaserBeam,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeam);
-		EnhancedInputComponent->BindAction(IA_LaserBeamTriggerAxis,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeamAxis);
+		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::RightTriggerStarted);
+		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::RightTriggeredCompleted);
+		
 	}
 }
 
@@ -272,14 +277,27 @@ void AIkarusVRBaseCharacter::HandleLaserBeam()
 	}
 }
 
-void AIkarusVRBaseCharacter::HandleLaserBeamAxis()
+void AIkarusVRBaseCharacter::RightTriggerStarted()
 {
-	if(bEnableLaserBeamTriggerAxis)
+	bool Check = IfOverWidgetUse(RightMotionController,true);
+	if(!Check)
 	{
-		if(bEnableLaserBeam && IsValid(TeleportControllerRight))
-		{
-			TeleportControllerRight->OnLaserBeamActiveTriggerAxis();
-		}
+		CheckUseHeldItems(RightMotionController,true);
+		bool OutDropped = false;
+		bool OutHadSecondary = false;
+		CheckUseSecondaryAttachment(RightMotionController,LeftMotionController,true,OutDropped,OutHadSecondary);
+	}
+}
+
+void AIkarusVRBaseCharacter::RightTriggeredCompleted()
+{
+	bool Check = IfOverWidgetUse(RightMotionController,false);
+	if(!Check)
+	{
+		CheckUseHeldItems(RightMotionController,false);
+		bool OutDropped = false;
+		bool OutHadSecondary = false;
+		CheckUseSecondaryAttachment(RightMotionController,LeftMotionController,false,OutDropped,OutHadSecondary);
 	}
 }
 
@@ -357,9 +375,11 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 	}
 	if(ImplementsInterface)
 	{
+		RumbleController(Hand,GrabHapticEffect,IntensityHapticEffect);
 		return (Hand->GripObjectByInterface(ObjectToTryToGrab,WorldTransform,true,GripBoneName,SlotName,bIsSlotGrip));
 	}
 		
+	RumbleController(Hand,GrabHapticEffect,IntensityHapticEffect);
 	return (Hand->GripObject(ObjectToTryToGrab,WorldTransform,true,SlotName,GripBoneName,EGripCollisionType::InteractiveCollisionWithPhysics,EGripLateUpdateSettings::NotWhenCollidingOrDoubleGripping,EGripMovementReplicationSettings::ForceClientSideMovement,2250.0,140.0,bIsSlotGrip));
 }
 
@@ -1310,6 +1330,7 @@ bool AIkarusVRBaseCharacter::GripOrDropObjectClean(UGripMotionControllerComponen
 		ESecondaryGripType OutSecGripType = ESecondaryGripType::SG_None ;
 		CanAttemptSecondaryGrabOnObject(NearestObject,OutbCanAttemptSeccondaryGrab,OutSecGripType);
 		if(OutbCanAttemptSeccondaryGrab)
+		if(OutbCanAttemptSeccondaryGrab)
 		{
 			//checks if secondary grip is valid or not
 			SecondaryGripType = OutSecGripType;
@@ -1446,6 +1467,16 @@ void AIkarusVRBaseCharacter::RemoveSecondaryGrip(UGripMotionControllerComponent*
 	Hand->RemoveSecondaryAttachmentPoint(GrippedActorToRemoveAttachment,0.25);
 }
 
+void AIkarusVRBaseCharacter::RumbleController(UGripMotionControllerComponent * Hand,UHapticFeedbackEffect_Base* HapticEff, float Intensity)
+{
+	if(IsValid(Hand))
+	{
+		EControllerHand currentHand;
+		Hand->GetHandType(currentHand);
+		(UGameplayStatics::GetPlayerController(GetWorld(),0))->PlayHapticEffect(HapticEff,currentHand,Intensity,false);
+	}
+}
+
 void AIkarusVRBaseCharacter::OnRightGrabSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                                            UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -1484,6 +1515,21 @@ void AIkarusVRBaseCharacter::NotifyServerOfTossRequest(bool LeftHand, UPrimitive
 	}else
 	{
 		TeleportControllerRight->ServerSideToss(TargetPrim);
+	}
+}
+
+void AIkarusVRBaseCharacter::UpdateClimbingMovement_Binding()
+{
+	if(bIsClimbing)
+	{
+		if(ClimbingHand && ClimbingGrip)
+		{
+			const FVector MovementVector = UKismetMathLibrary::NegateVector(
+				ClimbingHand->GetComponentLocation() -
+				UKismetMathLibrary::TransformLocation(ClimbingGrip->GetComponentTransform(), ClimbGripLocation));
+			
+			VRMovementReference->AddCustomReplicatedMovement(MovementVector);
+		}
 	}
 }
 
@@ -1603,76 +1649,79 @@ void AIkarusVRBaseCharacter::UpdateTeleportationRotations(FVector2D Input)
 }
 
 void AIkarusVRBaseCharacter::SetTeleportActive(EControllerHand Hand, bool Active)
+{
+	if (Hand == EControllerHand::Left)
 	{
-		if(Hand == EControllerHand::Left)
+		if (TeleportControllerLeft && Active)
 		{
-			if(TeleportControllerLeft && Active)
-			{
-				TeleportControllerLeft->ActivateTeleporter();
-			}else
-			{
-				TeleportControllerLeft->DeactivateTeleporter();
-			}
+			TeleportControllerLeft->ActivateTeleporter();
 		}
-		else if(Hand == EControllerHand::Right)
+		else
 		{
-			if(TeleportControllerRight && Active)
-			{
-				TeleportControllerRight->ActivateTeleporter();
-			}else
-			{
-				TeleportControllerRight->DeactivateTeleporter();
-			}
-		}
-		NotifyTeleportActive(Hand,Active);
-	}
-
-	void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionController,EControllerHand Hand)
-	{
-		if(!IsTeleporting)
-		{
-			VRMovementReference->StopMovementImmediately();
-
-				if(MotionController->IsValidTeleportDestination)
-			{
-				IsTeleporting = true;
-				APlayerCameraManager *CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(),0);
-				CameraManager->StartCameraFade(0.f,1.f,FadeOutDuration,TeleportFadeColor,false,true);
-
-				
-				FVector TeleportLocation;
-				FRotator TeleportRotation;
-				MotionController->GetTeleportDestination(false,TeleportLocation,TeleportRotation);
-
-				FVector OutLocation;
-				FRotator OutRotation;
-				GetCharacterRotatedPosition(GetTeleportLocation(TeleportLocation),TeleportRotation,GetVRLocation(),OutLocation,OutRotation);
-
-				// UKismetSystemLibrary::Delay(GetWorld(),FadeOutDuration,);	
-				// UKismetSystemLibrary::Delay();
-				// GetWorldTimerManager().SetTimer(TimerHandle,this,&AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime,FadeOutDuration,false);
-				SetTeleportActive(Hand,false);
-				VRMovementReference->PerformMoveAction_Teleport(OutLocation,OutRotation);
-
-				CameraManager->StartCameraFade(0.f,1.f,FadeOutDuration,TeleportFadeColor,false,false);
-				IsTeleporting = false;
-			}else
-			{
-				SetTeleportActive(Hand,false);
-			}
+			TeleportControllerLeft->DeactivateTeleporter();
 		}
 	}
-
-	void AIkarusVRBaseCharacter::GetCharacterRotatedPosition(FVector OriginalLocation,FRotator DeltaRotation,FVector PivotPoint,FVector &OutLocation,FRotator &OutRotation)
+	else if (Hand == EControllerHand::Right)
 	{
-		PivotPoint = UKismetMathLibrary::InverseTransformLocation(GetActorTransform(),PivotPoint);
-		UVRExpansionFunctionLibrary::RotateAroundPivot(DeltaRotation,OriginalLocation,GetCorrectRotation(),PivotPoint,OutLocation,OutRotation,true);
+		if (TeleportControllerRight && Active)
+		{
+			TeleportControllerRight->ActivateTeleporter();
+		}
+		else
+		{
+			TeleportControllerRight->DeactivateTeleporter();
+		}
 	}
+	NotifyTeleportActive(Hand, Active);
+}
 
-	FRotator AIkarusVRBaseCharacter::GetCorrectRotation()
+void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionController, EControllerHand Hand)
+{
+	if (!IsTeleporting)
 	{
-		return bUseControllerRotationYaw==true ? GetControlRotation():GetActorRotation();
+		VRMovementReference->StopMovementImmediately();
+
+		if (MotionController->IsValidTeleportDestination)
+		{
+			IsTeleporting = true;
+			APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+			CameraManager->StartCameraFade(0.f, 1.f, FadeOutDuration, TeleportFadeColor, false, true);
+
+
+			FVector TeleportLocation;
+			FRotator TeleportRotation;
+			MotionController->GetTeleportDestination(false, TeleportLocation, TeleportRotation);
+
+			FVector OutLocation;
+			FRotator OutRotation;
+			GetCharacterRotatedPosition(GetTeleportLocation(TeleportLocation), TeleportRotation, GetVRLocation(), OutLocation, OutRotation);
+
+			// UKismetSystemLibrary::Delay(GetWorld(),FadeOutDuration,);	
+			// UKismetSystemLibrary::Delay();
+			// GetWorldTimerManager().SetTimer(TimerHandle,this,&AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime,FadeOutDuration,false);
+			SetTeleportActive(Hand, false);
+			VRMovementReference->PerformMoveAction_Teleport(OutLocation, OutRotation);
+
+			CameraManager->StartCameraFade(0.f, 1.f, FadeOutDuration, TeleportFadeColor, false, false);
+			IsTeleporting = false;
+		}
+		else
+		{
+			SetTeleportActive(Hand, false);
+		}
 	}
+}
+
+void AIkarusVRBaseCharacter::GetCharacterRotatedPosition(FVector OriginalLocation, FRotator DeltaRotation, FVector PivotPoint, FVector & OutLocation, FRotator & OutRotation)
+{
+	PivotPoint = UKismetMathLibrary::InverseTransformLocation(GetActorTransform(), PivotPoint);
+	UVRExpansionFunctionLibrary::RotateAroundPivot(DeltaRotation, OriginalLocation, GetCorrectRotation(), PivotPoint, OutLocation, OutRotation, true);
+}
+
+FRotator AIkarusVRBaseCharacter::GetCorrectRotation()
+{
+	return bUseControllerRotationYaw == true ? GetControlRotation() : GetActorRotation();
+}
 
 void AIkarusVRBaseCharacter::NotifyTeleportActive(EControllerHand  Hand,bool State)
 {
@@ -1853,6 +1902,45 @@ void AIkarusVRBaseCharacter::ExitClimbing()
 		ClimbingGrip = nullptr;
 	}
 }
+
+FString AIkarusVRBaseCharacter::CheckXRApi()
+{
+	if (GEngine)
+	{
+		auto XRSystem = GEngine->XRSystem;
+		if (XRSystem.IsValid() && XRSystem->GetSystemName().ToString().Contains("OpenXR"))
+		{
+			return TEXT("OpenXR");
+		}
+		else if (XRSystem.IsValid() && XRSystem->GetSystemName().ToString().Contains("Oculus"))
+		{
+			return TEXT("Meta XR");
+		}
+	}
+	return TEXT("Unknown");
+}
+
+bool AIkarusVRBaseCharacter::IfOverWidgetUse(UGripMotionControllerComponent * CallingHand,bool Pressed)
+{
+	EControllerHand Hand;
+	CallingHand->GetHandType(Hand);
+	if(Hand == EControllerHand::Left)
+	{
+		if(IsValid(TeleportControllerLeft))
+		{
+			return TeleportControllerLeft->IfOverWidgetUse(Pressed);
+		}
+	}
+	if(Hand == EControllerHand::Right)
+	{
+		if(IsValid(TeleportControllerRight))
+		{
+			return TeleportControllerRight->IfOverWidgetUse(Pressed);
+		}
+	}
+	return false;
+}
+
 
 // Print Functions...
 void AIkarusVRBaseCharacter::Print(FString Message,int key,FColor Color,float TimeToDisplay)
