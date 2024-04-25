@@ -110,7 +110,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | Teleportation")
 	bool bEnableTeleportation = true;
 
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | SmoothMovement")
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | Snapping")
 	bool bEnableCharacterSmoothMovement = true;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Ikarus Character | Properties | CharacterMovement | Snapping")
