@@ -45,8 +45,6 @@ UE_DEFINE_GAMEPLAY_TAG(Weapon_DenyFreeGripping, "Weapon.DenyFreeGripping");
 UE_DEFINE_GAMEPLAY_TAG(Weapon_Gun_HeldAtGrip, "Weapon.Gun.HeldAtGrip");
 UE_DEFINE_GAMEPLAY_TAG(Weapon_Gun_HeldFreely, "Weapon.Gun.HeldFreely");
 
-
-
 /* ********************************************************************** */
 
 
@@ -149,7 +147,13 @@ void AIkarusVRBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(IA_LeftGrip, ETriggerEvent::Triggered, this, &AIkarusVRBaseCharacter::LeftGripTriggered);
 		EnhancedInputComponent->BindAction(IA_LeftGrip, ETriggerEvent::Completed, this, &AIkarusVRBaseCharacter::LeftGripCompleted);
 
+		//Right and Left Trigger
+		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::RightTriggerStarted);
+		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::RightTriggeredCompleted);
 
+		EnhancedInputComponent->BindAction(IA_LeftTriggerAxis,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::LeftTriggerStarted);
+		EnhancedInputComponent->BindAction(IA_LeftTriggerAxis,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::LeftTriggeredCompleted);
+		
 		//Turning
 		EnhancedInputComponent->BindAction(IA_Turn,ETriggerEvent::Triggered,this,&AIkarusVRBaseCharacter::HandleTurn);
 		EnhancedInputComponent->BindAction(IA_Turn,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::HandleTurn);
@@ -157,16 +161,13 @@ void AIkarusVRBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(IA_Move,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::HandleMove);
 
 		//LaserBeam
-		EnhancedInputComponent->BindAction(IA_LaserBeam,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeam);
-		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::RightTriggerStarted);
-		EnhancedInputComponent->BindAction(IA_RightTriggerAxis,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::RightTriggeredCompleted);
-		
+		EnhancedInputComponent->BindAction(IA_LaserBeam,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeam);		
 	}
 }
 
 void AIkarusVRBaseCharacter::MapInput(UInputMappingContext * InputMapping,int32 Priority)
 {
-	if(APlayerController * PlayerController = UGameplayStatics::GetPlayerController(GetWorld(),0))
+	if(const APlayerController * PlayerController = UGameplayStatics::GetPlayerController(GetWorld(),0))
 	{
 		if(UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
 			PlayerController->GetLocalPlayer()))
@@ -279,7 +280,7 @@ void AIkarusVRBaseCharacter::HandleLaserBeam()
 
 void AIkarusVRBaseCharacter::RightTriggerStarted()
 {
-	bool Check = IfOverWidgetUse(RightMotionController,true);
+	const bool Check = IfOverWidgetUse(RightMotionController,true);
 	if(!Check)
 	{
 		CheckUseHeldItems(RightMotionController,true);
@@ -291,7 +292,7 @@ void AIkarusVRBaseCharacter::RightTriggerStarted()
 
 void AIkarusVRBaseCharacter::RightTriggeredCompleted()
 {
-	bool Check = IfOverWidgetUse(RightMotionController,false);
+	const bool Check = IfOverWidgetUse(RightMotionController,false);
 	if(!Check)
 	{
 		CheckUseHeldItems(RightMotionController,false);
@@ -301,6 +302,29 @@ void AIkarusVRBaseCharacter::RightTriggeredCompleted()
 	}
 }
 
+void AIkarusVRBaseCharacter::LeftTriggerStarted()
+{
+	const bool Check = IfOverWidgetUse(LeftMotionController,true);
+	if(!Check)
+	{
+		CheckUseHeldItems(LeftMotionController,true);
+		bool OutDropped = false;
+		bool OutHadSecondary = false;
+		CheckUseSecondaryAttachment(LeftMotionController,RightMotionController,true,OutDropped,OutHadSecondary);
+	}
+}
+
+void AIkarusVRBaseCharacter::LeftTriggeredCompleted()
+{
+	const bool Check = IfOverWidgetUse(LeftMotionController,false);
+	if(!Check)
+	{
+		CheckUseHeldItems(LeftMotionController,false);
+		bool OutDropped = false;
+		bool OutHadSecondary = false;
+		CheckUseSecondaryAttachment(LeftMotionController,RightMotionController,false,OutDropped,OutHadSecondary);
+	}
+}
 
 bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransform WorldTransform,
                                              UGripMotionControllerComponent* Hand, UGripMotionControllerComponent* OtherHand, bool bIsSlotGrip,
@@ -323,8 +347,7 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 		//if other hand is holding the object already.
 		//then we will check...
 		// If we are allowing multiple grips., then we will grip, else we will check for hand swap or secondary grip..
-		IVRGripInterface * AsVRGripInterface = Cast<IVRGripInterface>(ObjectToTryToGrab);
-		if(!AsVRGripInterface)
+		if(const IVRGripInterface * AsVRGripInterface = Cast<IVRGripInterface>(ObjectToTryToGrab); !AsVRGripInterface)
 		{
 			//Cast failed
 			if(!(bIsSlotGrip && !bIsSecondaryGrip))
@@ -358,8 +381,7 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 		{
 			return false;
 		}
-		IVRGripInterface * AsVRGripInterface = Cast<IVRGripInterface>(ObjectToTryToGrab);
-		if(AsVRGripInterface)
+		if(const IVRGripInterface * AsVRGripInterface = Cast<IVRGripInterface>(ObjectToTryToGrab))
 		{
 			bool bIsHeld;
 			TArray<FBPGripPair>HoldingControllers;
@@ -384,19 +406,18 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 }
 
 bool AIkarusVRBaseCharacter::TryToSecondaryGripObject(UGripMotionControllerComponent* Hand,
-	UGripMotionControllerComponent* OtherHand, UObject* ObjecToTryToGrab, FGameplayTag GripSecondaryTag,
+	UGripMotionControllerComponent* OtherHand, UObject* ObjectToTryToGrab, FGameplayTag GripSecondaryTag,
 	bool ObjectImplementsInterface, FTransform RelativeSecondaryTransform, FName SlotName, bool bHadSlot)	
 {
 	if(!ObjectImplementsInterface)
 	{
 		return false;
 	}
-	IVRGripInterface *GripInterface = Cast<IVRGripInterface>(ObjecToTryToGrab);
-	if(GripInterface)
+	if(const IVRGripInterface *GripInterface = Cast<IVRGripInterface>(ObjectToTryToGrab))
 	{
-		if(CanSecondaryGripObject(Hand,OtherHand,ObjecToTryToGrab,GripSecondaryTag,bHadSlot,GripInterface->Execute_SecondaryGripType(ObjecToTryToGrab)))
+		if(CanSecondaryGripObject(Hand,OtherHand,ObjectToTryToGrab,GripSecondaryTag,bHadSlot,GripInterface->Execute_SecondaryGripType(ObjectToTryToGrab)))
 		{
-			return OtherHand->AddSecondaryAttachmentPoint(ObjecToTryToGrab,Hand,RelativeSecondaryTransform,true,0.25,bHadSlot,SlotName);
+			return OtherHand->AddSecondaryAttachmentPoint(ObjectToTryToGrab,Hand,RelativeSecondaryTransform,true,0.25,bHadSlot,SlotName);
 		}
 	}
 	return false;
@@ -411,9 +432,9 @@ void AIkarusVRBaseCharacter::GetNearestOverlappingObject(UPrimitiveComponent* Ov
 		return;
 	}
 	
-	UPrimitiveComponent * HitComponent = NULL;
+	UPrimitiveComponent * HitComponent = nullptr;
 	int LastGripPrio = 0;
-	UObject * NearestOverlappingObject =  NULL;
+	UObject * NearestOverlappingObject =  nullptr;
 	bool ImplementsVRGrip = false;
 	FTransform WorldTransform;
 	FName NearestBoneName = FName("None");
@@ -434,9 +455,7 @@ void AIkarusVRBaseCharacter::GetNearestOverlappingObject(UPrimitiveComponent* Ov
 		UClass * ComponentClassFilter = nullptr;
 		TArray<UPrimitiveComponent*>OutComponents;
 
-		bool Res = UKismetSystemLibrary::ComponentOverlapComponents(OverlapComponent,OverlapComponent->GetComponentTransform(),ObjectTypes,ComponentClassFilter,ActorsToIgnore,OutComponents);
-		
-		if(Res)
+		if(UKismetSystemLibrary::ComponentOverlapComponents(OverlapComponent,OverlapComponent->GetComponentTransform(),ObjectTypes,ComponentClassFilter,ActorsToIgnore,OutComponents))
 		{
 			for(int i = 0;i<OutComponents.Num();i++)
 			{
@@ -444,7 +463,7 @@ void AIkarusVRBaseCharacter::GetNearestOverlappingObject(UPrimitiveComponent* Ov
 				if(HasValidGripCollision(OutComponents[i]))
 				{
 					bool bShouldGrip = false;
-					UObject * ObjectToGrip = NULL;
+					UObject * ObjectToGrip = nullptr;
 					bool ObjectImplementsInterface = false;
 					FTransform ObjectsWorldTransform;
 					int GripPrio = 0;
@@ -474,18 +493,18 @@ void AIkarusVRBaseCharacter::GetNearestOverlappingObject(UPrimitiveComponent* Ov
 		FVector Calculation = UKismetMathLibrary::Multiply_VectorFloat(UKismetMathLibrary::GetForwardVector(GetCorrectAimComp(Hand)->GetComponentRotation()),GripTraceLength);
 		if(UKismetSystemLibrary::SphereTraceMulti(GetWorld(),UKismetMathLibrary::Subtract_VectorVector(Origin,Calculation),UKismetMathLibrary::Add_VectorVector(Calculation,Origin),Radius,CollisionChannelTraceTypeQuery,true,GrippedActorArray,EDrawDebugTrace::None,OutHit,true))
 		{
-			bool OutbShouldGrip = false;
-			bool OutbObjectImplemetsInterface = false;
-			UObject * OutObjectToGrip = NULL;
+			bool bShouldGrip = false;
+			bool bObjectImplementsInterface = false;
+			UObject * OutObjectToGrip = nullptr;
 			FTransform OutWorldTransform;
-			UPrimitiveComponent * OutFirstPrimitiveHit = NULL;
+			UPrimitiveComponent * OutFirstPrimitiveHit = nullptr;
 			FName OutBoneName;
 			FVector OutImpactPoint;
-			SelectObjectFromHitArray(OutHit,RelevantGameplayTags,Hand,OutbShouldGrip,OutbObjectImplemetsInterface,OutObjectToGrip,OutWorldTransform,OutFirstPrimitiveHit,OutBoneName,OutImpactPoint);
-				if(OutbShouldGrip)
+			SelectObjectFromHitArray(OutHit,RelevantGameplayTags,Hand,bShouldGrip,bObjectImplementsInterface,OutObjectToGrip,OutWorldTransform,OutFirstPrimitiveHit,OutBoneName,OutImpactPoint);
+				if(bShouldGrip)
 				{
 					NearestOverlappingObject = OutObjectToGrip;
-					ImplementsVRGrip = OutbObjectImplemetsInterface;
+					ImplementsVRGrip = bObjectImplementsInterface;
 					WorldTransform = OutWorldTransform;
 					ImpactPoint = OutImpactPoint;
 					if(OutObjectToGrip->GetClass()->ImplementsInterface(UGameplayTagAssetInterface::StaticClass()))
@@ -522,8 +541,7 @@ void AIkarusVRBaseCharacter::GetNearestOverlappingObject(UPrimitiveComponent* Ov
 			UClass * ComponentClassFilter = nullptr;
 			TArray<UPrimitiveComponent*>OutComponents;
 
-			bool Res = UKismetSystemLibrary::ComponentOverlapComponents(OverlapComponent,OverlapComponent->GetComponentTransform(),ObjectTypes,ComponentClassFilter,ActorsToIgnore,OutComponents);
-			if(Res)
+			if(UKismetSystemLibrary::ComponentOverlapComponents(OverlapComponent,OverlapComponent->GetComponentTransform(),ObjectTypes,ComponentClassFilter,ActorsToIgnore,OutComponents))
 			{
 				for(int i = 0;i<OutComponents.Num();i++)
 				{
@@ -531,7 +549,7 @@ void AIkarusVRBaseCharacter::GetNearestOverlappingObject(UPrimitiveComponent* Ov
 					if(HasValidGripCollision(OutComponents[i]))
 					{
 						bool bShouldGrip = false;
-						UObject * ObjectToGrip = NULL;
+						UObject * ObjectToGrip = nullptr;
 						bool ObjectImplementsInterface = false;
 						FTransform ObjectsWorldTransform;
 						int GripPrio = 0;
@@ -573,9 +591,9 @@ void AIkarusVRBaseCharacter::SelectObjectFromHitArray(TArray<FHitResult> Hits,
 {
 	bool LShouldGrip = false;
 	bool LObjectImplementsInterface = false;
-	UObject * LOutObject = NULL;
+	UObject * LOutObject = nullptr;
 	FTransform LOutTransform;
-	UPrimitiveComponent * OutFirstHitPrimitive = NULL;
+	UPrimitiveComponent * OutFirstHitPrimitive = nullptr;
 	FName LOutBoneName;
 	FVector LImpactPoint;
 	
@@ -591,12 +609,12 @@ void AIkarusVRBaseCharacter::SelectObjectFromHitArray(TArray<FHitResult> Hits,
 			bool TempShouldGrip = false;
 			int TempBestGripPrio = 0;
 			bool TempObjectImplementsInterface = false;
-			UObject * TempOutObject = NULL;
+			UObject * TempOutObject = nullptr;
 			FTransform TempOutTransform;
-			FName TempOutBoneName;
 			ShouldGripComponent(Hits[i].GetComponent(),TempBestGripPrio,i>0,Hits[i].BoneName,RelevantGameplayTags,Hand,TempShouldGrip,TempOutObject,TempObjectImplementsInterface,TempOutTransform,TempBestGripPrio);
 			if(TempShouldGrip)
 			{
+				const FName TempOutBoneName;
 				LOutObject = TempOutObject;
 				LOutTransform = TempOutTransform;
 				LObjectImplementsInterface = TempObjectImplementsInterface;
@@ -618,8 +636,7 @@ void AIkarusVRBaseCharacter::SelectObjectFromHitArray(TArray<FHitResult> Hits,
 bool AIkarusVRBaseCharacter::ValidateGameplayTagContainer(FGameplayTag BaseTag, UObject* Object,
 	FGameplayTag DefaultTag, FGameplayTagContainer GameplayTags)
 {
-	IGameplayTagAssetInterface * GameplayTagAssetInterface  = Cast<IGameplayTagAssetInterface>(Object);
-	if(GameplayTagAssetInterface)
+	if(const IGameplayTagAssetInterface * GameplayTagAssetInterface  = Cast<IGameplayTagAssetInterface>(Object))
 	{
 		if(GameplayTagAssetInterface->HasMatchingGameplayTag(BaseTag))
 		{
@@ -636,7 +653,7 @@ UObject* AIkarusVRBaseCharacter::GetNearestOverlapOfHand(UGripMotionControllerCo
 {
 	TArray<UPrimitiveComponent*>OverlappingComponents;
 	OverlapSphere->GetOverlappingComponents(OverlappingComponents);
-	UObject * NearestOverlapObject = NULL;
+	UObject * NearestOverlapObject = nullptr;
 	float NearestOverlap = 100000000.0;
 
 	for(const auto x : OverlappingComponents)
@@ -693,8 +710,7 @@ bool AIkarusVRBaseCharacter::ValidateGameplayTag(FGameplayTag BaseTag, FGameplay
 {
 	if(UBlueprintGameplayTagLibrary::IsGameplayTagValid(GameplayTag))
 	{
-		IGameplayTagAssetInterface * GameplayTagAssetInterface  = Cast<IGameplayTagAssetInterface>(Object);
-		if(GameplayTagAssetInterface)
+		if(const IGameplayTagAssetInterface * GameplayTagAssetInterface  = Cast<IGameplayTagAssetInterface>(Object))
 		{
 			if(GameplayTagAssetInterface->HasMatchingGameplayTag(BaseTag))
 			{
@@ -739,9 +755,7 @@ void AIkarusVRBaseCharacter::DropSecondaryAttachment(UGripMotionControllerCompon
 void AIkarusVRBaseCharacter::ShouldSocketGrip(FBPActorGripInformation Grip, bool& ShouldSocket,
 	USceneComponent*& SocketParent, FTransform_NetQuantize& RelativeTransform, FName& OptionalSocketName)
 {
-	IVRGripInterface *GripInterface =  Cast<IVRGripInterface>(Grip.GrippedObject);
-
-	if(GripInterface)
+	if(const IVRGripInterface *GripInterface =  Cast<IVRGripInterface>(Grip.GrippedObject))
 	{
 		ShouldSocket = GripInterface->Execute_RequestsSocketing(Grip.GrippedObject,SocketParent,OptionalSocketName,RelativeTransform);
 	}else
@@ -755,7 +769,7 @@ void AIkarusVRBaseCharacter::TryDropSingleClient(UGripMotionControllerComponent*
                                                  FBPActorGripInformation GripToDrop, FVector AngleVel, FVector LinearVel){
 	
 	bool bShouldSocketGrip = false;
-	USceneComponent * OutSocketParent = NULL;
+	USceneComponent * OutSocketParent = nullptr;
 	FTransform_NetQuantize OutRelativeTransform;
 	FName OutOptionSocketName;
 	ShouldSocketGrip(GripToDrop,bShouldSocketGrip,OutSocketParent,OutRelativeTransform,OutOptionSocketName);
@@ -794,12 +808,12 @@ void AIkarusVRBaseCharacter::TryDropSingle(UGripMotionControllerComponent* Contr
 void AIkarusVRBaseCharacter::CheckGripPriority(UObject* ObjectToCheck, int PrioToCheckAgainst, bool CheckAgainstPrior,
 	bool& HadHigherPriority, int& NewGripPrio)
 {
-	IVRGripInterface * GripInterface = Cast<IVRGripInterface>(ObjectToCheck);
+	const IVRGripInterface * GripInterface = Cast<IVRGripInterface>(ObjectToCheck);
 	if(CheckAgainstPrior)
 	{
 		if(GripInterface)
 		{
-			FBPAdvGripSettings Settings = GripInterface->Execute_AdvancedGripSettings(ObjectToCheck);
+			const FBPAdvGripSettings Settings = GripInterface->Execute_AdvancedGripSettings(ObjectToCheck);
 			HadHigherPriority = Settings.GripPriority>PrioToCheckAgainst;
 			NewGripPrio = Settings.GripPriority;
 		}
@@ -807,7 +821,7 @@ void AIkarusVRBaseCharacter::CheckGripPriority(UObject* ObjectToCheck, int PrioT
 	{
 		if(GripInterface)
 		{
-			FBPAdvGripSettings Settings = GripInterface->Execute_AdvancedGripSettings(ObjectToCheck);
+			const FBPAdvGripSettings Settings = GripInterface->Execute_AdvancedGripSettings(ObjectToCheck);
 			HadHigherPriority = true;
 			NewGripPrio = Settings.GripPriority;
 		}
@@ -836,10 +850,7 @@ bool AIkarusVRBaseCharacter::CheckIsValidForGripping(UObject* Object, FGameplayT
 void AIkarusVRBaseCharacter::CanAttemptSecondaryGrabOnObject(UObject* ObjectToCheck, bool& CanAttemptSecondaryGrab,
 	ESecondaryGripType &SecondaryGripType)
 {
-	IVRGripInterface *GripInterface  = Cast<IVRGripInterface>(ObjectToCheck);
-	
-	
-	if(GripInterface)
+	if(const IVRGripInterface *GripInterface  = Cast<IVRGripInterface>(ObjectToCheck))
 	{
 		TArray<FBPGripPair> OutHoldingController;
 		bool OutIsHeld = false;
@@ -869,7 +880,7 @@ void AIkarusVRBaseCharacter::ShouldGripComponent(UPrimitiveComponent* ComponentT
 	}
 	bool ImplementsInterface = ComponentToCheck->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass());
 
-	IVRGripInterface * GripInterface = Cast<IVRGripInterface>(ComponentToCheck);
+	const IVRGripInterface * GripInterface = Cast<IVRGripInterface>(ComponentToCheck);
 	
 	if(ImplementsInterface)
 	{
@@ -913,8 +924,7 @@ void AIkarusVRBaseCharacter::ShouldGripComponent(UPrimitiveComponent* ComponentT
 		ImplementsInterface = OwningActor->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass());
 		if(ImplementsInterface)
 		{
-			IVRGripInterface * GripInterfaceOwningActor = Cast<IVRGripInterface>(OwningActor);
-			if(GripInterfaceOwningActor)
+			if(const IVRGripInterface * GripInterfaceOwningActor = Cast<IVRGripInterface>(OwningActor))
 			{
 				if(GripInterfaceOwningActor->Execute_SecondaryGripType(OwningActor) == ESecondaryGripType::SG_None && GripInterfaceOwningActor->Execute_DenyGripping(OwningActor,CallingController))
 				{
@@ -965,8 +975,7 @@ void AIkarusVRBaseCharacter::CheckUseSecondaryAttachment(UGripMotionControllerCo
 		if(ButtonPressed)
 		{
 			// If button is pressed
-			IVRGripInterface *GripInterface = Cast<IVRGripInterface>(OutGripInfo.GrippedObject);
-			if(GripInterface)
+			if(const IVRGripInterface *GripInterface = Cast<IVRGripInterface>(OutGripInfo.GrippedObject))
 			{
 				GripInterface->Execute_OnSecondaryUsed(OutGripInfo.GrippedObject);
 				HadSecondary = true;
@@ -978,8 +987,7 @@ void AIkarusVRBaseCharacter::CheckUseSecondaryAttachment(UGripMotionControllerCo
 			}
 		}else
 		{
-			IVRGripInterface *AsGripInterface = Cast<IVRGripInterface>(OutGripInfo.GrippedObject);
-			if(AsGripInterface)
+			if(const IVRGripInterface *AsGripInterface = Cast<IVRGripInterface>(OutGripInfo.GrippedObject))
 			{
 				AsGripInterface->Execute_OnEndSecondaryUsed(OutGripInfo.GrippedObject);
 				DroppedOrUsedSecondary = true;
@@ -1000,11 +1008,11 @@ void AIkarusVRBaseCharacter::CheckUseHeldItems(UGripMotionControllerComponent* H
 	Hand->GetAllGrips(OutGripArray);
 
 	//Reverse for loop
-	for(int i = OutGripArray.Num()-1 ;i>=0;i--)
+	for(int i = OutGripArray.Num()-1; i >= 0; i--)
 	{
 		if(IsValid(OutGripArray[i].GrippedObject))
 		{
-			IVRGripInterface *AsGripInterface = Cast<IVRGripInterface>(OutGripArray[i].GrippedObject);
+			const IVRGripInterface* AsGripInterface = Cast<IVRGripInterface>(OutGripArray[i].GrippedObject);
 			if(ButtonState)
 			{
 				if(AsGripInterface)
@@ -1032,8 +1040,7 @@ FTransform AIkarusVRBaseCharacter::RemoveControllerScale(FTransform SocketTransf
 
 bool AIkarusVRBaseCharacter::CanAttemptGrabOnObject(UObject* ObjectToCheck)
 {
-	IVRGripInterface *GripInterface = Cast<IVRGripInterface>(ObjectToCheck);
-	if(GripInterface)
+	if(const IVRGripInterface *GripInterface = Cast<IVRGripInterface>(ObjectToCheck))
 	{
 		TArray<FBPGripPair>OutHoldingController;
 		bool OutIsHeld = false;
@@ -1072,19 +1079,17 @@ bool AIkarusVRBaseCharacter::CanSecondaryGripObject(UGripMotionControllerCompone
 
 FTransform AIkarusVRBaseCharacter::GetBoneTransform(UObject* Object, FName BoneName)
 {
-	FTransform Output;
+	const FTransform Output;
 	if(BoneName != FName("None"))
 	{
-		USceneComponent *SceneComp = Cast<USceneComponent>(Object);
-		if(SceneComp)
+		if(const USceneComponent *SceneComp = Cast<USceneComponent>(Object))
 		{
 			return SceneComp->GetSocketTransform(BoneName);
 		}else
 		{
 			//Cast Unsuccessful
 			//Cast to skeletal Mesh actor
-			ASkeletalMeshActor *SkeletalMeshActor = Cast<ASkeletalMeshActor>(Object);
-			if(SkeletalMeshActor)
+			if(const ASkeletalMeshActor *SkeletalMeshActor = Cast<ASkeletalMeshActor>(Object))
 			{
 				return SkeletalMeshActor->GetSkeletalMeshComponent()->GetSocketTransform(BoneName);
 			}
@@ -1096,8 +1101,7 @@ FTransform AIkarusVRBaseCharacter::GetBoneTransform(UObject* Object, FName BoneN
 void AIkarusVRBaseCharacter::CallCorrectDropSingleEvent(UGripMotionControllerComponent* Hand,
 	FBPActorGripInformation Grip)
 {
-	IVRGripInterface *GripInterface = Cast<IVRGripInterface>(Grip.GrippedObject);
-	if(GripInterface)
+	if(const IVRGripInterface *GripInterface = Cast<IVRGripInterface>(Grip.GrippedObject))
 	{
 		FVector OutCurrAngleVel;
 		FVector OutCurrLinearVel;
@@ -1123,8 +1127,7 @@ void AIkarusVRBaseCharacter::GetThrowingVelocity(UGripMotionControllerComponent*
 	FVector LocalVel;
 	if(Grip.GrippedObject->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass()))
 	{
-		IVRGripInterface *GripInt = Cast<IVRGripInterface>(Grip.GrippedObject);
-		if(GripInt)
+		if(const IVRGripInterface *GripInt = Cast<IVRGripInterface>(Grip.GrippedObject))
 		{
 			TArray<FBPGripPair> OutHoldingController;
 			bool bIsHeld = false;
@@ -1213,9 +1216,7 @@ void AIkarusVRBaseCharacter::CallCorrectGrabEvent(UObject* ObjectToGrip, EContro
 	FTransform GripTransform, FGameplayTag GripSecondaryTag, FName OptionalBoneName, FName SlotName,
 	bool IsSecondaryGrip)
 {
-	IVRGripInterface * GripInterface = Cast<IVRGripInterface>(ObjectToGrip);
-
-	if(GripInterface)
+	if(const IVRGripInterface * GripInterface = Cast<IVRGripInterface>(ObjectToGrip))
 	{
 		if(IsALocalGrip(GripInterface->Execute_GripMovementReplicationType(ObjectToGrip)))
 		{
@@ -1262,8 +1263,7 @@ FName AIkarusVRBaseCharacter::GetCorrectPrimarySlotPrefix(UObject* ObjectToCheck
 	{
 		LocalBasePrefix = NearestBoneName;
 	}
-	IGameplayTagAssetInterface *TagAssetInterface = Cast<IGameplayTagAssetInterface>(ObjectToCheckForTag);
-	if(TagAssetInterface)
+	if(const IGameplayTagAssetInterface *TagAssetInterface = Cast<IGameplayTagAssetInterface>(ObjectToCheckForTag))
 	{
 		HasPerHandSocket = TagAssetInterface->HasMatchingGameplayTag(GripSockets_SeperateHandSocket);
 	}
@@ -1291,14 +1291,12 @@ bool AIkarusVRBaseCharacter::GripOrDropObjectClean(UGripMotionControllerComponen
 	FGameplayTagContainer RelevantGameplayTags)
 {
 	
-	UObject *NearestObject = NULL;
+	UObject *NearestObject = nullptr;
 	FName NearestBoneName = FName("None");
 	FTransform ObjectTransform;
-	bool bHadSlot = false;
 	ESecondaryGripType SecondaryGripType=ESecondaryGripType::SG_None;
 	FVector ImpactPoint;
-	FName SlotName;
-	
+
 	if(CallingMotionController->HasGrippedObjects())
 	{
 		// if calling controller already has an gripped object, We will drop the object.
@@ -1320,24 +1318,25 @@ bool AIkarusVRBaseCharacter::GripOrDropObjectClean(UGripMotionControllerComponen
 	if(!IsValid(NearestObject))return false;
 	if(OutImpInterface)
 	{
+		FName SlotName;
+		bool bHadSlot = false;
 		if(!CanAttemptGrabOnObject(NearestObject))
 		{
 			return false;
 		}
 		/*   -------Checking For Secondary Grab-------     */
 		
-		bool OutbCanAttemptSeccondaryGrab = false;
+		bool bCanAttemptSecondaryGrab = false;
 		ESecondaryGripType OutSecGripType = ESecondaryGripType::SG_None ;
-		CanAttemptSecondaryGrabOnObject(NearestObject,OutbCanAttemptSeccondaryGrab,OutSecGripType);
-		if(OutbCanAttemptSeccondaryGrab)
-		if(OutbCanAttemptSeccondaryGrab)
+		CanAttemptSecondaryGrabOnObject(NearestObject,bCanAttemptSecondaryGrab,OutSecGripType);
+		if(bCanAttemptSecondaryGrab)
+		if(bCanAttemptSecondaryGrab)
 		{
 			//checks if secondary grip is valid or not
 			SecondaryGripType = OutSecGripType;
 			if(ValidateGameplayTagContainer(GripType_Secondary,NearestObject,DefaultSecondaryGripTag,RelevantGameplayTags))
 			{
-				IVRGripInterface *GripInt = Cast<IVRGripInterface>(NearestObject);
-				if(GripInt)
+				if(IVRGripInterface *GripInt = Cast<IVRGripInterface>(NearestObject))
 				{
 					FTransform OutSlotWorldTransform;
 					GripInt->Execute_ClosestGripSlotInRange(NearestObject,ImpactPoint,true,bHadSlot,OutSlotWorldTransform,SlotName,CallingMotionController,FName("None"));
@@ -1366,8 +1365,7 @@ bool AIkarusVRBaseCharacter::GripOrDropObjectClean(UGripMotionControllerComponen
 		}
 		
 		// if can not attempt secondary grab on object, then we will try for primary grab next.
-		IVRGripInterface *GripInter = Cast<IVRGripInterface>(NearestObject);
-		if(GripInter)
+		if(IVRGripInterface *GripInter = Cast<IVRGripInterface>(NearestObject))
 		{
 			if(!GripInter->Execute_DenyGripping(NearestObject,CallingMotionController))
 			{
@@ -1380,8 +1378,7 @@ bool AIkarusVRBaseCharacter::GripOrDropObjectClean(UGripMotionControllerComponen
 				
 				if(!bHadSlot)
 				{
-					IGameplayTagAssetInterface *GameplayTagAssetInterface = Cast<IGameplayTagAssetInterface>(NearestObject);
-					if(GameplayTagAssetInterface)
+					if(IGameplayTagAssetInterface *GameplayTagAssetInterface = Cast<IGameplayTagAssetInterface>(NearestObject))
 					{
 						if(GameplayTagAssetInterface->HasMatchingGameplayTag(Weapon_DenyFreeGripping))
 						{
@@ -1430,10 +1427,10 @@ bool AIkarusVRBaseCharacter::GripOrDropObjectClean(UGripMotionControllerComponen
 		Temp = GetBoneTransform(NearestObject,NearestBoneName);
 	}
 	
-	EControllerHand HandTypee;
-	CallingMotionController->GetHandType(HandTypee);
+	EControllerHand HandType;
+	CallingMotionController->GetHandType(HandType);
 	FGameplayTag GripTag;
-	TryGrabServer(NearestObject,false,CallingMotionController->ConvertToControllerRelativeTransform(Temp),HandTypee,GripTag,NearestBoneName,FName("None"),false);
+	TryGrabServer(NearestObject,false,CallingMotionController->ConvertToControllerRelativeTransform(Temp),HandType,GripTag,NearestBoneName,FName("None"),false);
 	return true;
 }
 
@@ -1538,8 +1535,8 @@ void AIkarusVRBaseCharacter::SpawnController()
 	
 		if(TeleportControllerClass)
 		{
-				FVector SpawnLocation = FVector(0.0f, 0.0f, 0.0f); 
-				FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
+			const FVector SpawnLocation = FVector(0.0f, 0.0f, 0.0f);
+			const FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
 				FActorSpawnParameters SpawnParams;
 
 				//For Left Motion Controller.
@@ -1621,8 +1618,8 @@ void AIkarusVRBaseCharacter::SpawnController()
 void AIkarusVRBaseCharacter::UpdateTeleportationRotations(FVector2D Input)
 {
 	//For Right Controller :
-	float XVal = Input.X;
-	float YVal = Input.Y;
+	const float XVal = Input.X;
+	const float YVal = Input.Y;
 
 	if(IsValid(TeleportControllerLeft))
 	{
@@ -1712,7 +1709,7 @@ void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionCo
 	}
 }
 
-void AIkarusVRBaseCharacter::GetCharacterRotatedPosition(FVector OriginalLocation, FRotator DeltaRotation, FVector PivotPoint, FVector & OutLocation, FRotator & OutRotation)
+void AIkarusVRBaseCharacter::GetCharacterRotatedPosition(const FVector& OriginalLocation, const FRotator& DeltaRotation, FVector PivotPoint, FVector & OutLocation, FRotator & OutRotation)
 {
 	PivotPoint = UKismetMathLibrary::InverseTransformLocation(GetActorTransform(), PivotPoint);
 	UVRExpansionFunctionLibrary::RotateAroundPivot(DeltaRotation, OriginalLocation, GetCorrectRotation(), PivotPoint, OutLocation, OutRotation, true);
@@ -1798,7 +1795,7 @@ void AIkarusVRBaseCharacter::HandleCurrentMovementInput(FVector2D MovementInput)
 		{
 			CallingHand = LeftMotionController;
 		}
-		FVector2D NormalizedInput = MovementInput.GetSafeNormal();
+		const FVector2D NormalizedInput = MovementInput.GetSafeNormal();
 		ThumbY = NormalizedInput.Y;
 		ThumbX = NormalizedInput.X;
 
@@ -1808,10 +1805,10 @@ void AIkarusVRBaseCharacter::HandleCurrentMovementInput(FVector2D MovementInput)
 
 		CalcPadRotationAndMagnitude(ThumbY, ThumbX, DPadVelocityScaler, SlidingMovementDeadZone, Rotation, Magnitude, WasValid);
 
-		FVector OutFrwdVect;
+		FVector FwrdVect;
 		FVector OutRightVec;
 
-		GetDPadMovementFacing(CallingHand, OutFrwdVect, OutRightVec);
+		GetDPadMovementFacing(CallingHand, FwrdVect, OutRightVec);
 
 		if (WasValid)
 		{
@@ -1821,12 +1818,12 @@ void AIkarusVRBaseCharacter::HandleCurrentMovementInput(FVector2D MovementInput)
 			}
 			else
 			{
-				Direction = Rotation.RotateVector(OutFrwdVect);
+				Direction = Rotation.RotateVector(FwrdVect);
 			}
 		}
 		else
 		{
-			Direction = OutFrwdVect;
+			Direction = FwrdVect;
 		}
 		AddMovementInput(Direction, Magnitude, false);
 	}
@@ -1839,7 +1836,7 @@ void AIkarusVRBaseCharacter::CalcPadRotationAndMagnitude(float YAxis, float XAxi
 	OutRotation = UKismetMathLibrary::MakeRotFromX(FVector(YAxis, XAxis, 0));
 
 	//Output Magnitude
-	double MaxEle = UKismetMathLibrary::GetMaxElement(FVector(abs(YAxis * OptMagnitudeScaler), abs(XAxis * OptMagnitudeScaler), 0.0));
+	const double MaxEle = UKismetMathLibrary::GetMaxElement(FVector(abs(YAxis * OptMagnitudeScaler), abs(XAxis * OptMagnitudeScaler), 0.0));
 	// OutMagnitude = UKismetMathLibrary::Clamp(MaxEle,0.00000f,1.0000f);
 	OutMagnitude = MaxEle;
 
@@ -1848,7 +1845,7 @@ void AIkarusVRBaseCharacter::CalcPadRotationAndMagnitude(float YAxis, float XAxi
 
 }
 
-void AIkarusVRBaseCharacter::GetDPadMovementFacing(UGripMotionControllerComponent* CallingHand, FVector& OutForwardVector, FVector& OutRightVector)
+void AIkarusVRBaseCharacter::GetDPadMovementFacing(const UGripMotionControllerComponent* CallingHand, FVector& OutForwardVector, FVector& OutRightVector)
 {
 	if (bCharacterMovementAccordingToController)
 	{
@@ -1862,16 +1859,16 @@ void AIkarusVRBaseCharacter::GetDPadMovementFacing(UGripMotionControllerComponen
 	}
 }
 
-void AIkarusVRBaseCharacter::MapThumbToWorld(UGripMotionControllerComponent* CallingHand, FRotator Rotation, FVector& OutDirection)
+void AIkarusVRBaseCharacter::MapThumbToWorld(const UGripMotionControllerComponent* CallingHand, const FRotator& Rotation, FVector& OutDirection)
 {
 	// OutDirection = UKismetMathLibrary::Normal(UKismetMathLibrary::ProjectVectorOnToPlane(UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::ComposeRotators(Rotation,CallingHand->GetComponentRotation())),GetVRUpVector()));
 
-	USceneComponent* AimComp = GetCorrectAimComp(CallingHand);
+	const USceneComponent* AimComp = GetCorrectAimComp(CallingHand);
 	OutDirection = UKismetMathLibrary::Normal(UKismetMathLibrary::ProjectVectorOnToPlane(UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::ComposeRotators(Rotation, AimComp->GetComponentRotation())), GetVRUpVector()));
 
 }
 
-USceneComponent* AIkarusVRBaseCharacter::GetCorrectAimComp(UGripMotionControllerComponent* CallingHand)
+USceneComponent* AIkarusVRBaseCharacter::GetCorrectAimComp(const UGripMotionControllerComponent* CallingHand)
 {
 	if (CallingHand == LeftMotionController)return AimLeft;
 	return AimRight;
@@ -1907,7 +1904,7 @@ FString AIkarusVRBaseCharacter::CheckXRApi()
 {
 	if (GEngine)
 	{
-		auto XRSystem = GEngine->XRSystem;
+		const auto XRSystem = GEngine->XRSystem;
 		if (XRSystem.IsValid() && XRSystem->GetSystemName().ToString().Contains("OpenXR"))
 		{
 			return TEXT("OpenXR");
@@ -1943,7 +1940,7 @@ bool AIkarusVRBaseCharacter::IfOverWidgetUse(UGripMotionControllerComponent * Ca
 
 
 // Print Functions...
-void AIkarusVRBaseCharacter::Print(FString Message,int key,FColor Color,float TimeToDisplay)
+void AIkarusVRBaseCharacter::Print(const FString& Message,int key,FColor Color,float TimeToDisplay)
 	{
 		if(GEngine)
 		GEngine->AddOnScreenDebugMessage(key, TimeToDisplay, Color, Message);
@@ -1951,15 +1948,15 @@ void AIkarusVRBaseCharacter::Print(FString Message,int key,FColor Color,float Ti
 
 void AIkarusVRBaseCharacter::Print(int Message, int key, FColor Color,float TimeToDisplay)
 {
-	FString NumAsString = FString::FromInt(Message);
+	const FString NumAsString = FString::FromInt(Message);
 	if(GEngine)
 		GEngine->AddOnScreenDebugMessage(key, TimeToDisplay, Color, NumAsString);
 }
 
-void AIkarusVRBaseCharacter::Print(FTransform Message, int key, FColor Color, float TimeToDisplay,bool PrintOnlyLocation )
+void AIkarusVRBaseCharacter::Print(const FTransform& Message, int key, FColor Color, float TimeToDisplay,bool PrintOnlyLocation )
 {
-	FString Loc = Message.GetLocation().ToString();
-	FString Rot = Message.GetRotation().ToString();
+	const FString Loc = Message.GetLocation().ToString();
+	const FString Rot = Message.GetRotation().ToString();
 	
 	if(GEngine)
 	{
