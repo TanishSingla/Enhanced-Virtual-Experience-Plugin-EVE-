@@ -1,6 +1,6 @@
 # Enhanced Virtual Experience (EVE) Plugin
 
-![Enhanced Virtual Experience](attachment://Preview.jpg)
+![Enhanced Virtual Experience](Preview.jpg)
 
 ## Overview
 The EVE Plugin is a cutting-edge VR Expansion Plugin designed to be the foundational tool for any VR project. It offers a quick startup and seamless integration, significantly streamlining the VR development process. This plugin is ideal for developers aiming to enhance or create immersive VR experiences with robust interaction capabilities and efficient character movement.
