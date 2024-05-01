@@ -61,6 +61,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
 	UInputAction * IA_LeftGrip;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
+	UInputAction * IA_RightTriggerAxis;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
+	UInputAction * IA_LeftTriggerAxis;
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
 	UInputAction * IA_Turn;
@@ -70,11 +76,6 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
 	UInputAction * IA_LaserBeam;
-
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
-	UInputAction * IA_RightTriggerAxis;
-
-	
 	
 	//Inputs Functions :-
 
@@ -96,11 +97,10 @@ protected:
 	void HandleMove(const FInputActionValue & Input);
 	void HandleLaserBeam();
 	
-	UFUNCTION(BlueprintCallable)
 	void RightTriggerStarted();
-
-	UFUNCTION(BlueprintCallable)
 	void RightTriggeredCompleted();
+	void LeftTriggerStarted();
+	void LeftTriggeredCompleted();
 	
 	//Components
 	
@@ -190,7 +190,7 @@ protected:
 	float GripTraceLength = 0.1f;
 	
 	UPROPERTY(BlueprintReadOnly,Category="Ikarus Character | Grabbing | Variables")
-	UObject * NearestOverlappingObjectValue = NULL;
+	UObject * NearestOverlappingObjectValue = nullptr;
 	
 	//Tags
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing | Variables")
@@ -241,7 +241,7 @@ protected:
 	bool TryToGrabObject(UObject * ObjectToTryToGrab,FTransform WorldTransform,UGripMotionControllerComponent * Hand,UGripMotionControllerComponent * OtherHand,bool bIsSlotGrip,FGameplayTag GripSecondaryTag,FName GripBoneName,FName SlotName,bool IsSecondaryGrip);
 
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
-	bool TryToSecondaryGripObject(UGripMotionControllerComponent * Hand,UGripMotionControllerComponent * OtherHand,UObject * ObjecToTryToGrab,FGameplayTag GripSecondaryTag,bool ObjectImplementsInterface,FTransform RelativeSecondaryTransform,FName SlotName,bool bHadSlot);
+	bool TryToSecondaryGripObject(UGripMotionControllerComponent * Hand,UGripMotionControllerComponent * OtherHand,UObject * ObjectToTryToGrab,FGameplayTag GripSecondaryTag,bool ObjectImplementsInterface,FTransform RelativeSecondaryTransform,FName SlotName,bool bHadSlot);
 	
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Grabbing | Functions")
 	void GetNearestOverlappingObject(UPrimitiveComponent * OverlapComponent,UGripMotionControllerComponent * Hand,FGameplayTagContainer RelevantGameplayTags ,UObject *&NearestObject,bool &bImplementsInterface,FTransform &ObjectTransform,bool &bCanBeClimbed,FName &BoneName,FVector &ImpactLoc);
@@ -363,8 +363,7 @@ protected:
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Functions | OverlappingEvents")
 	void OnLeftGrabSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	//Climbing :- (Currently Not Working in Cpp)
-	// virtual void UpdateClimbingMovement(float DeltaTime) override;
+	//Climbing :- 
 	
 	//Teleportation
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | InputSetup|Inputs | VR")
@@ -389,7 +388,7 @@ protected:
 	void ExecuteTeleportation(ATeleportController * MotionController,EControllerHand Hand);
 
 	UFUNCTION()
-	void GetCharacterRotatedPosition(FVector OriginalLocation,FRotator DeltaRotation,FVector PivotPoint,FVector &OutLocation,FRotator &OutRotation);
+	void GetCharacterRotatedPosition(const FVector& OriginalLocation, const FRotator& DeltaRotation,FVector PivotPoint,FVector &OutLocation,FRotator &OutRotation);
 
 	UFUNCTION()
 	FRotator GetCorrectRotation();
@@ -428,13 +427,13 @@ protected:
 	void CalcPadRotationAndMagnitude(float YAxis,float XAxis,float OptMagnitudeScaler,float OptionalDeadzone,FRotator &OutRotation,float &OutMagnitude,bool &WasValid);
 
 	UFUNCTION()
-	void GetDPadMovementFacing(UGripMotionControllerComponent*CallingHand,FVector &OutForwardVector,FVector &OutRightVector);
+	void GetDPadMovementFacing(const UGripMotionControllerComponent*CallingHand,FVector &OutForwardVector,FVector &OutRightVector);
 
 	UFUNCTION()
-	void MapThumbToWorld(UGripMotionControllerComponent*CallingHand,FRotator Rotation,FVector & OutDirection);
+	void MapThumbToWorld(const UGripMotionControllerComponent*CallingHand, const FRotator& Rotation,FVector & OutDirection);
 
 	UFUNCTION()
-	USceneComponent *GetCorrectAimComp(UGripMotionControllerComponent*CallingHand);
+	USceneComponent *GetCorrectAimComp(const UGripMotionControllerComponent*CallingHand);
 	
 	float ThumbX = 0.0f;
 	float ThumbY = 0.f;
@@ -487,9 +486,9 @@ protected:
 	
 	
 	// Print function.
-	void Print(FString Message,int key = 1 ,FColor Color  =FColor::Red,float TimeToDisplay=3);
+	void Print(const FString& Message,int key = 1 ,FColor Color  =FColor::Red,float TimeToDisplay=3);
 	void Print(int Message,int key = 1 ,FColor Color  =FColor::Red,float TimeToDisplay=3);
-	void Print(FTransform Message,int key = 1 ,FColor Color  =FColor::Red,float TimeToDisplay=3,bool PrintOnlyLocation = true);
+	void Print(const FTransform& Message,int key = 1 ,FColor Color  =FColor::Red,float TimeToDisplay=3,bool PrintOnlyLocation = true);
 	
 };
 
