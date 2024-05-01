@@ -363,8 +363,7 @@ protected:
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Functions | OverlappingEvents")
 	void OnLeftGrabSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	//Climbing :- (Currently Not Working in Cpp)
-	// virtual void UpdateClimbingMovement(float DeltaTime) override;
+	//Climbing :- 
 	
 	//Teleportation
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | InputSetup|Inputs | VR")
