@@ -75,7 +75,10 @@ protected:
 	UInputAction * IA_Move;
 	
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
-	UInputAction * IA_LaserBeam;
+	UInputAction * IA_LaserBeamRight;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
+	UInputAction * IA_LaserBeamLeft;
 	
 	//Inputs Functions :-
 
@@ -95,7 +98,8 @@ protected:
 
 	void HandleTurn(const FInputActionValue & InputAxis);
 	void HandleMove(const FInputActionValue & Input);
-	void HandleLaserBeam();
+	void HandleLaserBeamRight();
+	void HandleLaserBeamLeft();
 	
 	void RightTriggerStarted();
 	void RightTriggeredCompleted();
@@ -178,6 +182,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | CharacterMovement | Teleportation")
 	float TeleportThumbDeadZone = 0.4f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Ikarus Character")
+	bool bUsingGraspingHands = false;
 
 	//Variables
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Grabbing")
@@ -363,7 +370,8 @@ protected:
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Functions | OverlappingEvents")
 	void OnLeftGrabSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	//Climbing :- 
+	//Climbing :- (Currently Not Working in Cpp)
+	// virtual void UpdateClimbingMovement(float DeltaTime) override;
 	
 	//Teleportation
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | InputSetup|Inputs | VR")
@@ -479,6 +487,12 @@ protected:
 	/*   */
 	UFUNCTION(BlueprintCallable)
 	FString CheckXRApi();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnGraspingHands();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void EnableControllerAnimations();
 
 	/*   Widget Interaction  */
 	UFUNCTION(BlueprintCallable)

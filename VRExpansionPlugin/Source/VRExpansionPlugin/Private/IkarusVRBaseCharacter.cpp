@@ -98,7 +98,6 @@ AIkarusVRBaseCharacter::AIkarusVRBaseCharacter()
 	DefaultSecondaryDropTag =	DropType_Secondary_OnPrimaryGripRelease;
 	LeftPeakVel.VelocitySamples = 30;	
 	RightPeakVel.VelocitySamples = 30;
-
 }
 
 void AIkarusVRBaseCharacter::BeginPlay()
@@ -118,7 +117,20 @@ void AIkarusVRBaseCharacter::BeginPlay()
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(TrackingOrigin);
 	UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(SpectatorScreenMode);
 	
-	SpawnController();	
+	SpawnController();
+
+	if(CheckXRApi() == "OpenXR")
+	{
+		SpawnGraspingHands();
+		bUsingGraspingHands = true;
+	}
+	else
+	{
+		EnableControllerAnimations();
+		bUsingGraspingHands = false;
+	}
+
+	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
 void AIkarusVRBaseCharacter::Tick(float DeltaTime)
@@ -161,7 +173,8 @@ void AIkarusVRBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(IA_Move,ETriggerEvent::Completed,this,&AIkarusVRBaseCharacter::HandleMove);
 
 		//LaserBeam
-		EnhancedInputComponent->BindAction(IA_LaserBeam,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeam);		
+		EnhancedInputComponent->BindAction(IA_LaserBeamRight,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeamRight);
+		EnhancedInputComponent->BindAction(IA_LaserBeamLeft,ETriggerEvent::Started,this,&AIkarusVRBaseCharacter::HandleLaserBeamLeft);
 	}
 }
 
@@ -270,11 +283,19 @@ void AIkarusVRBaseCharacter::HandleMove(const FInputActionValue& Input)
 	}
 }
 
-void AIkarusVRBaseCharacter::HandleLaserBeam()
+void AIkarusVRBaseCharacter::HandleLaserBeamRight()
 {
 	if(bEnableLaserBeam && IsValid(TeleportControllerRight))
 	{
 		TeleportControllerRight->SetLaserBeamActive(!TeleportControllerRight->bIsLaserBeamActive);
+	}
+}
+
+void AIkarusVRBaseCharacter::HandleLaserBeamLeft()
+{
+	if(bEnableLaserBeam && IsValid(TeleportControllerLeft))
+	{
+		TeleportControllerLeft->SetLaserBeamActive(!TeleportControllerLeft->bIsLaserBeamActive);
 	}
 }
 
@@ -287,6 +308,11 @@ void AIkarusVRBaseCharacter::RightTriggerStarted()
 		bool OutDropped = false;
 		bool OutHadSecondary = false;
 		CheckUseSecondaryAttachment(RightMotionController,LeftMotionController,true,OutDropped,OutHadSecondary);
+	}
+
+	if(TeleportControllerRight)
+	{
+		TeleportControllerRight->GrabTrigger();
 	}
 }
 
@@ -311,6 +337,11 @@ void AIkarusVRBaseCharacter::LeftTriggerStarted()
 		bool OutDropped = false;
 		bool OutHadSecondary = false;
 		CheckUseSecondaryAttachment(LeftMotionController,RightMotionController,true,OutDropped,OutHadSecondary);
+	}
+
+	if(TeleportControllerLeft)
+	{
+		TeleportControllerLeft->GrabTrigger();
 	}
 }
 
@@ -398,10 +429,38 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 	if(ImplementsInterface)
 	{
 		RumbleController(Hand,GrabHapticEffect,IntensityHapticEffect);
+
+		EControllerHand HandType;
+		Hand->GetHandType(HandType);
+		switch (HandType)
+		{
+		case EControllerHand::Left:
+			if(TeleportControllerLeft) TeleportControllerLeft->SetLaserBeamActive(false);
+
+		case EControllerHand::Right:
+			if(TeleportControllerRight) TeleportControllerRight->SetLaserBeamActive(false);
+			
+		default: ;
+		}
+		
 		return (Hand->GripObjectByInterface(ObjectToTryToGrab,WorldTransform,true,GripBoneName,SlotName,bIsSlotGrip));
 	}
 		
 	RumbleController(Hand,GrabHapticEffect,IntensityHapticEffect);
+
+	EControllerHand HandType;
+	Hand->GetHandType(HandType);
+	switch (HandType)
+	{
+	case EControllerHand::Left:
+		if(TeleportControllerLeft) TeleportControllerLeft->SetLaserBeamActive(false);
+
+	case EControllerHand::Right:
+		if(TeleportControllerRight) TeleportControllerRight->SetLaserBeamActive(false);
+			
+	default: ;
+	}
+	
 	return (Hand->GripObject(ObjectToTryToGrab,WorldTransform,true,SlotName,GripBoneName,EGripCollisionType::InteractiveCollisionWithPhysics,EGripLateUpdateSettings::NotWhenCollidingOrDoubleGripping,EGripMovementReplicationSettings::ForceClientSideMovement,2250.0,140.0,bIsSlotGrip));
 }
 
