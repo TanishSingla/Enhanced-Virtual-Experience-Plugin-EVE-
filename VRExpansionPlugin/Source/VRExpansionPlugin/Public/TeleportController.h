@@ -84,6 +84,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
 	void RumbleController(UHapticFeedbackEffect_Base * HapticEff,float Intensity = 1.0f);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void GrabTrigger();
 	
 	/**
 	 * Variables
@@ -183,9 +186,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components)
 	UPrimitiveComponent* ActorBeingThrown;
-
-	// UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = Components)
-	// UPhysicsTossManager * PhysicsTossManager;
 	
 	/**
 	 * Variables

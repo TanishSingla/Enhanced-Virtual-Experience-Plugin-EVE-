@@ -129,11 +129,9 @@ void ATeleportController::OnTeleportControllerClassConstructed()
 			APlayerController * PlayerController = UGameplayStatics::GetPlayerController(GetWorld(),0);
 			EnableInput(PlayerController);
 
-			AIkarusVRBaseCharacter * IkarusBaseChar = Cast<AIkarusVRBaseCharacter>(OwningMotionController->GetOwner());
+			const AIkarusVRBaseCharacter * IkarusBaseChar = Cast<AIkarusVRBaseCharacter>(OwningMotionController->GetOwner());
 			if(IsValid(IkarusBaseChar))
 			{
-				// IkarusBaseChar->OnCharacterTeleported_Bind;
-
 				SetOwner(OwningMotionController->GetOwner());
 			}
 		}
@@ -350,7 +348,6 @@ void ATeleportController::RumbleController(UHapticFeedbackEffect_Base * HapticEf
 	}
 }
 
-
 void ATeleportController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -400,9 +397,8 @@ void ATeleportController::Tick(float DeltaTime)
 
 void ATeleportController::ServerSideToss(UPrimitiveComponent* TargetObject)
 {
-	// PhysicsTossManager->ServersideToss(TargetObject,OwningMotionController);
+	
 }
-
 
 void ATeleportController::SetLaserBeamActive(bool bLaserBeamActive)
 {
