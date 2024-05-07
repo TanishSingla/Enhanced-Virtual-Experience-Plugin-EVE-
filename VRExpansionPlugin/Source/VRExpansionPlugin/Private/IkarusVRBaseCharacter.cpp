@@ -402,8 +402,18 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 					if(TryToSecondaryGripObject(Hand,OtherHand,ObjectToTryToGrab,GripSecondaryTag,ImplementsInterface,WorldTransform,SlotName,bIsSlotGrip))
 						return true;
 				}
+
+				/*
+				 if you are facing gripping related bugs then use the commented functions below and comment the rest. Good Luck!
+				 */
+				
 				//Drop Object
-				OtherHand->DropObject(ObjectToTryToGrab);
+				// OtherHand->DropObject(ObjectToTryToGrab);
+				
+				FGameplayTagContainer RelevantGameplayTagCont;
+				RelevantGameplayTagCont.AddTag(DropType_OnPrimaryGripRelease);
+				RelevantGameplayTagCont.AddTag(DropType_Secondary_OnPrimaryGripRelease);
+				DropItems(OtherHand, RelevantGameplayTagCont);
 			}
 		}
 	}else
