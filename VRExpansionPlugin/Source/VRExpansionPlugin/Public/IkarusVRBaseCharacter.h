@@ -156,8 +156,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Tracking Origin")
 	TEnumAsByte<EHMDTrackingOrigin::Type> TrackingOrigin = EHMDTrackingOrigin::Floor;
 
-	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Spectator Screen Mode")
-	ESpectatorScreenMode SpectatorScreenMode = ESpectatorScreenMode::SingleEyeCroppedToFill;
+	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Spectator")
+	bool bEnableSmoothSpectator = true;
+
+	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Spectator", meta = (EditCondition = "bEnableSmoothSpectator"))
+	float SpectatorFOV = 90.f;
+
+	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | Spectator", meta = (EditCondition = "bEnableSmoothSpectator"))
+	UTextureRenderTarget2D* RenderTarget;
 
 	UPROPERTY(BlueprintReadOnly,Category="Teleport Controllers")
 	ATeleportController * TeleportControllerLeft;
@@ -407,9 +413,11 @@ protected:
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Functions | Teleportation")
 	void MulticastTeleportActive(EControllerHand Hand,bool State);
 	
-	FTimerHandle TimerHandle;
 	void DelayFunctionRunAfterFadeTime();
-	// void StartDelayTimer(float time);
+
+	EControllerHand TeleportHandForFade;
+	FVector TeleportLocationForFade;
+	FRotator TeleportRotationForFade;
 	
 	//Snapping
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | CharacterMovement | Snapping")
@@ -482,11 +490,13 @@ protected:
 	FName ClimbingTag = "climbable";
 	
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Climbing | Variables",Meta=(ToolTip = "If Enabled will allow Snapping/Turning on Climbing."))
-	bool bEnableSnappingWhileClimbing = false;
+	bool bEnableSnapTurnWhileClimbing = false;
 
 	/*   */
 	UFUNCTION(BlueprintCallable)
 	FString CheckXRApi();
+
+	void SpawnSpectator();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void SpawnGraspingHands();

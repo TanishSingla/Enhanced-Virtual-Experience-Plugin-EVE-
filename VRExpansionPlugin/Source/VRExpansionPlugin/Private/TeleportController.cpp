@@ -560,7 +560,7 @@ void ATeleportController::CreateLaserSpline()
 		for(int32 i = 0; i <= NumberOfLaserSplinePoints-1 ; i++)
 		{
 			USplineMeshComponent* NewMesh = NewObject<USplineMeshComponent>(this);
-			
+			NewMesh->SetMobility(EComponentMobility::Movable);
 			NewMesh->SetStaticMesh(BaseSplineMesh);
 			NewMesh->RegisterComponent();
 			NewMesh->SetMaterial(0, SmoothLaserBeamMaterial);

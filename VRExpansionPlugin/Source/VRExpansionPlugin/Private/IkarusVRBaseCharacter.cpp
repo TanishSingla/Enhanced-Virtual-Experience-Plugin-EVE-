@@ -13,7 +13,9 @@
 #include "VRGripInterface.h"
 #include "VRRootComponent.h"
 #include "NativeGameplayTags.h"
+#include "VRSpectator.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "Components/SceneCaptureComponent2D.h"
 
 
 /* Gameplay Tags Declaration */
@@ -109,13 +111,20 @@ void AIkarusVRBaseCharacter::BeginPlay()
 	APlayerCameraManager *CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(),0);
 	CameraManager->StartCameraFade(1.f,0.f,1.0f,FColor::White,false,false);
 
+	//Spawn Spectator if using
+	if(bEnableSmoothSpectator)
+	{
+
+		FTimerHandle SpecSpawnTimer;
+		GetWorldTimerManager().SetTimer(SpecSpawnTimer, this, &ThisClass::SpawnSpectator, 1.f);
+	}
+
 	//Inputs Mapping.
 	MapInput(VRInputMapping,0);
 
 	VRMovementReference->PhysCustom_ClimbingDelegate.AddDynamic(this, &ThisClass::UpdateClimbingMovement_Binding);
 		
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(TrackingOrigin);
-	UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(SpectatorScreenMode);
 	
 	SpawnController();
 
@@ -1762,14 +1771,13 @@ void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionCo
 			FRotator OutRotation;
 			GetCharacterRotatedPosition(GetTeleportLocation(TeleportLocation), TeleportRotation, GetVRLocation(), OutLocation, OutRotation);
 
-			// UKismetSystemLibrary::Delay(GetWorld(),FadeOutDuration,);	
-			// UKismetSystemLibrary::Delay();
-			// GetWorldTimerManager().SetTimer(TimerHandle,this,&AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime,FadeOutDuration,false);
-			SetTeleportActive(Hand, false);
-			VRMovementReference->PerformMoveAction_Teleport(OutLocation, OutRotation);
-
-			CameraManager->StartCameraFade(0.f, 1.f, FadeOutDuration, TeleportFadeColor, false, false);
-			IsTeleporting = false;
+			FTimerHandle FadeTimer;
+			
+			TeleportHandForFade = Hand;
+			TeleportLocationForFade = OutLocation;
+			TeleportRotationForFade = OutRotation;
+			
+			GetWorld()->GetTimerManager().SetTimer(FadeTimer, this, &AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime, FadeOutDuration, false);
 		}
 		else
 		{
@@ -1814,7 +1822,7 @@ void AIkarusVRBaseCharacter::MulticastTeleportActive(EControllerHand  Hand,bool 
 
 void AIkarusVRBaseCharacter::HandleTurnInput(float InputAxis)
 {
-	if (!bIsClimbing || (bIsClimbing && bEnableSnappingWhileClimbing))
+	if (!bIsClimbing || (bIsClimbing && bEnableSnapTurnWhileClimbing))
 	{
 		if (InputAxis != 0)
 		{
@@ -1934,7 +1942,6 @@ void AIkarusVRBaseCharacter::MapThumbToWorld(const UGripMotionControllerComponen
 
 	const USceneComponent* AimComp = GetCorrectAimComp(CallingHand);
 	OutDirection = UKismetMathLibrary::Normal(UKismetMathLibrary::ProjectVectorOnToPlane(UKismetMathLibrary::GetForwardVector(UKismetMathLibrary::ComposeRotators(Rotation, AimComp->GetComponentRotation())), GetVRUpVector()));
-
 }
 
 USceneComponent* AIkarusVRBaseCharacter::GetCorrectAimComp(const UGripMotionControllerComponent* CallingHand)
@@ -1945,7 +1952,13 @@ USceneComponent* AIkarusVRBaseCharacter::GetCorrectAimComp(const UGripMotionCont
 
 void AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime()
 {
+	APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
 	
+	SetTeleportActive(TeleportHandForFade, false);
+	VRMovementReference->PerformMoveAction_Teleport(TeleportLocationForFade, TeleportRotationForFade);
+
+	CameraManager->StartCameraFade(1.f, 0.f, FadeOutDuration, TeleportFadeColor, false, false);
+	IsTeleporting = false;
 }
 
 void AIkarusVRBaseCharacter::InitializeClimbing(UPrimitiveComponent * NewClimbingGrip,UGripMotionControllerComponent*CallingHand)
@@ -1984,6 +1997,21 @@ FString AIkarusVRBaseCharacter::CheckXRApi()
 		}
 	}
 	return TEXT("Unknown");
+}
+
+void AIkarusVRBaseCharacter::SpawnSpectator()
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+		
+	if(AVRSpectator* Spectator = GetWorld()->SpawnActor<AVRSpectator>(SpawnParameters))
+	{
+		Spectator->SceneCapture->TextureTarget = RenderTarget;
+		Spectator->FieldOfView = SpectatorFOV;
+		UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(ESpectatorScreenMode::Texture);
+		UTexture* Texture = Cast<UTexture>(Spectator->SceneCapture->TextureTarget);
+		UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenTexture(Texture);
+	}
 }
 
 bool AIkarusVRBaseCharacter::IfOverWidgetUse(UGripMotionControllerComponent * CallingHand,bool Pressed)
