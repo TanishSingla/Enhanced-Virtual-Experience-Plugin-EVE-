@@ -102,7 +102,7 @@ public:
 	float LaserBeamTraceOffset;
 	
 	UPROPERTY(EditDefaultsOnly,Category = "LaserBeam")
-	bool EnableDebugMode = false;
+	bool bEnableDebugMode = false;
 
 	UPROPERTY(BlueprintReadOnly,Category = "LaserBeam")
 	FHitResult LaserBeamHitResult;
@@ -115,11 +115,14 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly,Category = "Defaults")
 	bool IsValidTeleportDestination;
+
+	UPROPERTY(EditDefaultsOnly,Category = "Defaults")
+	TEnumAsByte<ECollisionChannel> TeleportTraceChannel = ECollisionChannel::ECC_Visibility;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components, meta = (ExposeOnSpawn = "True"))
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components, meta = (ExposeOnSpawn = "True"))
 	UGripMotionControllerComponent* OwningMotionController;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	bool bIsLocal;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
@@ -131,7 +134,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	FRotator TeleportBaseRotation;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	bool bIsLaserBeamActive = false;
 	
 	
@@ -211,10 +214,10 @@ private:
 	FVector TraceEndLocation = FVector(0,0,-200.0);
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	bool bUseSmoothLaser = true;
+	bool bUseSmoothLaser = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float LaserBeamMaxDistance = 5000.f;
+	float LaserBeamMaxDistance = 1000.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	float LaserBeamRadius = 1.f;
@@ -224,6 +227,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	float TeleportLaunchSpeed = 1200.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float VectorTolerence = 10.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	float ProjectNavExtends = 500.f;
@@ -250,7 +256,7 @@ private:
 	TArray<USplineMeshComponent*> SplineMeshes;
 	
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	FBPEuroLowPassFilter LowPassFilter ;
+	FBPEuroLowPassFilter LowPassFilter;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	TArray<USplineMeshComponent*> LaserSplineMeshes;

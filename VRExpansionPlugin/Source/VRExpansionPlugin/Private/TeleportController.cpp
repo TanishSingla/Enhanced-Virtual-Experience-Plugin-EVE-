@@ -193,12 +193,14 @@ void ATeleportController::TraceTeleportDestination(bool& bSuccess, TArray<FVecto
 	FHitResult TraceResult;
 	FVector LastOutTraceDest;
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
-	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(TeleportTraceChannel));
 	TArray<AActor*> ActorsToIgnore;
 	
 	bool WasHit = UGameplayStatics::Blueprint_PredictProjectilePath_ByObjectType(GetWorld(), TraceResult, TracePoints,
-		LastOutTraceDest, TeleWorldLoc, TeleForwardVec*TeleportLaunchSpeed, true, 0.f, TraceObjects, false,
-		ActorsToIgnore, EDrawDebugTrace::None, 0,30.0,2.0,0.0);
+		LastOutTraceDest, TeleWorldLoc, TeleForwardVec*TeleportLaunchSpeed,
+		true, 0.f, TraceObjects, false,
+		ActorsToIgnore,  bEnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None,
+		0,30.0,2.0,0.f);
 	
 	TraceLocation = TraceResult.Location;
 	if(UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
@@ -207,8 +209,10 @@ void ATeleportController::TraceTeleportDestination(bool& bSuccess, TArray<FVecto
 		
 		NavSystem->ProjectPointToNavigation(TraceResult.Location, ProjectedNavLocation, FVector(ProjectNavExtends));
 		NavMeshLocation = ProjectedNavLocation.Location;
-		bSuccess = UKismetMathLibrary::NotEqual_VectorVector(TraceResult.Location, NavMeshLocation) &&
-			UKismetMathLibrary::NotEqual_VectorVector(NavMeshLocation, FVector::ZeroVector) && WasHit;
+		bSuccess = UKismetMathLibrary::EqualEqual_VectorVector(NavMeshLocation, TraceResult.Location, VectorTolerence)
+		&& UKismetMathLibrary::NotEqual_VectorVector(TraceResult.Location, NavMeshLocation)
+		&& UKismetMathLibrary::NotEqual_VectorVector(NavMeshLocation, FVector::ZeroVector)
+		&& WasHit;
 	}
 	
 }
@@ -363,25 +367,25 @@ void ATeleportController::Tick(float DeltaTime)
 		TraceTeleportDestination(bSuccess,TracePoints,NavMeshLocation,TraceLocation);
 		IsValidTeleportDestination = bSuccess;
 
-		// sequence 
+		// sequence
 		TeleportCylinder->SetVisibility(IsValidTeleportDestination,true);
 		if(IsValidTeleportDestination)
 		{
-			const TArray<TEnumAsByte<EObjectTypeQuery>>ObjectTypes;
+			TArray<TEnumAsByte<EObjectTypeQuery>>ObjectTypes;
+			ObjectTypes.Add(UEngineTypes::ConvertToObjectType(TeleportTraceChannel));
 			TArray<AActor*> ActorsToIgnore;
 			FHitResult OutHit;
-			UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(),NavMeshLocation,UKismetMathLibrary::Add_VectorVector(NavMeshLocation , TraceEndLocation),ObjectTypes,false,ActorsToIgnore,EDrawDebugTrace::None,OutHit,true);
+			UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(),NavMeshLocation,UKismetMathLibrary::Add_VectorVector(NavMeshLocation , TraceEndLocation),ObjectTypes,false,ActorsToIgnore,bEnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None,OutHit,true);
 
 			TeleportCylinder->SetWorldLocation(UKismetMathLibrary::SelectVector(OutHit.ImpactPoint,NavMeshLocation,OutHit.bBlockingHit),false,nullptr,ETeleportType::TeleportPhysics);
 			LastValidTeleportLocation = TeleportCylinder->GetComponentLocation();
 		}
 
 		//Sequence 1
-		//Rumble Controller when valid teleport controller found.
-		// if((IsValidTeleportDestination && !bLastFrameValidDestination) || (!IsValidTeleportDestination && bLastFrameValidDestination))
-		// {
-		// 	RumbleController(HapticEffect,RumbleControllerIntensity);
-		// }
+		if((IsValidTeleportDestination && !bLastFrameValidDestination) || (!IsValidTeleportDestination && bLastFrameValidDestination))
+		{
+			RumbleController(HapticEffect,RumbleControllerIntensity);
+		}
 
 		//Sequence 2
 		bLastFrameValidDestination = bSuccess;
@@ -453,7 +457,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 			  
 		const bool bWasHit = UKismetSystemLibrary::LineTraceSingle(GetWorld(), TeleWorldLoc,
 			(TeleForwardVec * LaserBeamMaxDistance) + TeleWorldLoc,
-			LaserBeamTraceChannel, false, ActorsToIgnore, EnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None,
+			LaserBeamTraceChannel, false, ActorsToIgnore, bEnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None,
 			LastLaserHitResult, true);
 
 		// Smooth Laser Logic
@@ -470,7 +474,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 			
 			const FVector TraceEndLoc = SmoothedLoc + (UKismetMathLibrary::Normal((SmoothedLoc - TeleWorldLoc),0.0001) * 100.0f);
 			const bool bIsHit = UKismetSystemLibrary::LineTraceSingle(GetWorld(), TeleWorldLoc, TraceEndLoc,
-			LaserBeamTraceChannel, false, ActorsToIgnore,EnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None, TraceResult, true);
+			LaserBeamTraceChannel, false, ActorsToIgnore,bEnableDebugMode ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None, TraceResult, true);
 
 			LaserBeamHitResult = TraceResult;
 			if(LaserBeamHitResult.GetActor())

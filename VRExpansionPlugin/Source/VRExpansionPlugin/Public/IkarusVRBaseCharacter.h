@@ -45,8 +45,9 @@ public:
 private:
 
 	UPROPERTY()
-	FInputActionValue TeleportRotationInput;
 	bool bTurningFlag = false;
+
+	UPROPERTY()
 	float InputValue = 0.0;
 	
 protected:
@@ -54,7 +55,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
-	UInputAction* IA_Teleport;
+	UInputAction* IA_LeftTeleport;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
+	UInputAction* IA_RightTeleport;
 	
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
 	UInputAction * IA_RightGrip;
@@ -79,25 +83,35 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
 	UInputAction * IA_LaserBeamLeft;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
+	UInputAction * IA_LeftThumbstick;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "true"), Category = "Ikarus Character | InputSetup|Inputs|VR")
+	UInputAction * IA_RightThumbstick;
 	
 	//Inputs Functions :-
 
 	//Teleportation
-	void TeleportStarted();
-	void TeleportTriggered();
-	void TeleportCompleted();
+	void LeftTeleportStarted();
+	void LeftTeleportCompleted();
+
+	void RightTeleportStarted();
+	void RightTeleportCompleted();
 
 	//Left and Right grip
 	void RightGripStarted();
-	void RightGripTriggered();
 	void RightGripCompleted();
 
 	void LeftGripStarted();
-	void LeftGripTriggered();
 	void LeftGripCompleted();
 
 	void HandleTurn(const FInputActionValue & InputAxis);
 	void HandleMove(const FInputActionValue & Input);
+
+	void HandleLeftTeleportedRotation(const FInputActionValue & Input);
+	void HandleRightTeleportedRotation(const FInputActionValue & Input);
+	
 	void HandleLaserBeamRight();
 	void HandleLaserBeamLeft();
 	
@@ -176,6 +190,12 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite,Category="Properties | Teleportation")
 	bool IsTeleporting = false;
+
+	UPROPERTY()
+	bool bIsLeftTeleportInputActive = false;
+
+	UPROPERTY()
+	bool bIsRightTeleportInputActive = false;
 	
 	UPROPERTY(EditDefaultsOnly,Category="Ikarus Character | Properties | CharacterMovement | Teleportation")
 	float FadeOutDuration  = 0.40f;
@@ -393,7 +413,7 @@ protected:
 	void InitTeleportControllers();
 
 	UFUNCTION(BlueprintCallable,Category="Ikarus Character | Functions  | Teleportation")
-	void UpdateTeleportationRotations(FVector2D Input);
+	void UpdateTeleportationRotations(ATeleportController* TeleportController, FVector2D Input);
 
 	UFUNCTION()
 	void SetTeleportActive(EControllerHand Hand,bool Active);
