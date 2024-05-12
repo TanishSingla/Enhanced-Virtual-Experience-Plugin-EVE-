@@ -13,7 +13,7 @@ AVRSpectator::AVRSpectator()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture"));
-	SceneCapture->SetupAttachment(GetRootComponent());
+	SetRootComponent(SceneCapture);
 	SceneCapture->bCaptureEveryFrame = false;
 	SceneCapture->bCaptureOnMovement = false;
 	SceneCapture->CaptureSource = SCS_FinalColorLDR;

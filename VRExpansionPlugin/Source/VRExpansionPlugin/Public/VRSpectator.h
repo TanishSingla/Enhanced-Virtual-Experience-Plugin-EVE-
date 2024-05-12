@@ -19,9 +19,6 @@ public:
 	UPROPERTY(VisibleDefaultsOnly, Category = Components)
 	UTextureRenderTarget2D* RenderTarget;
 
-	UPROPERTY(EditAnywhere, Category = "Spectator Properties")
-	float FieldOfView = 90.f;
-
 protected:
 	virtual void BeginPlay() override;
 

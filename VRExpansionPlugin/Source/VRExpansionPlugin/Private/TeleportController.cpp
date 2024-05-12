@@ -161,7 +161,6 @@ void ATeleportController::GetTeleWorldLocAndForwardVector(FVector& WorldLoc, FVe
 void ATeleportController::ActivateTeleporter()
 {
 	bIsTeleporterActive = true;
-	TeleportCylinder->SetVisibility(true, true);
 	
 	if(IsValid(OwningMotionController))
 	{
@@ -209,7 +208,7 @@ void ATeleportController::TraceTeleportDestination(bool& bSuccess, TArray<FVecto
 		
 		NavSystem->ProjectPointToNavigation(TraceResult.Location, ProjectedNavLocation, FVector(ProjectNavExtends));
 		NavMeshLocation = ProjectedNavLocation.Location;
-		bSuccess = UKismetMathLibrary::EqualEqual_VectorVector(NavMeshLocation, TraceResult.Location, VectorTolerence)
+		bSuccess = UKismetMathLibrary::EqualEqual_VectorVector(NavMeshLocation, TraceResult.Location, 30.f)
 		&& UKismetMathLibrary::NotEqual_VectorVector(TraceResult.Location, NavMeshLocation)
 		&& UKismetMathLibrary::NotEqual_VectorVector(NavMeshLocation, FVector::ZeroVector)
 		&& WasHit;
@@ -230,17 +229,6 @@ void ATeleportController::ClearArc()
 void ATeleportController::UpdateArcSpline(bool bFoundValidLoc,  TArray<FVector> SplinePoints)
 {
 	ArcSpline->ClearSplinePoints(true);
-	if(!bFoundValidLoc)
-	{
-		SplinePoints.Empty();
-
-		FVector TeleWorldLoc;
-		FVector TeleForwardVec;
-
-		GetTeleWorldLocAndForwardVector(TeleWorldLoc, TeleForwardVec);
-		SplinePoints.Add(TeleWorldLoc);
-		SplinePoints.Add((TeleWorldLoc + (TeleForwardVec * 20.f)));
-	}
 	
 	for (FVector Loc : SplinePoints)
 	{
@@ -253,11 +241,6 @@ void ATeleportController::UpdateArcSpline(bool bFoundValidLoc,  TArray<FVector> 
 	}
 
 	PointDiffNum = (ArcSpline->GetNumberOfSplinePoints() - 1) - SplineMeshes.Num();
-
-	if(SplineMeshes.Num() > 0)
-	{
-		SplineMeshes[0]->SetMaterial(0,TeleportSplineStartingMaterial);
-	}
 	
 	if (SplineMeshes.Num() < ArcSpline->GetNumberOfSplinePoints())
 	{
@@ -279,7 +262,8 @@ void ATeleportController::UpdateArcSpline(bool bFoundValidLoc,  TArray<FVector> 
 			if (ArrayIndex < ArcSpline->GetNumberOfSplinePoints() - 1)
 			{
 				SplineMeshes[ArrayIndex]->SetVisibility(true);
-
+				SplineMeshes[ArrayIndex]->SetMaterial(0, bFoundValidLoc ? TeleportSplineValidMaterial : TeleportSplineInvalidMaterial);
+				SplineMeshes[0]->SetMaterial(0, bFoundValidLoc ? TeleportSplineStartingValidMaterial : TeleportSplineStartingInvalidMaterial);
 				SplineMeshes[ArrayIndex]->SetStartAndEnd(SplinePoints[ArrayIndex],
 					ArcSpline->GetTangentAtSplinePoint(ArrayIndex, ESplineCoordinateSpace::Local),
 					SplinePoints[ArrayIndex + 1],
@@ -300,7 +284,8 @@ void ATeleportController::UpdateArcSpline(bool bFoundValidLoc,  TArray<FVector> 
 			if (ArrayIndex < ArcSpline->GetNumberOfSplinePoints() - 1)
 			{
 				SplineMeshes[ArrayIndex]->SetVisibility(true);
-
+				SplineMeshes[ArrayIndex]->SetMaterial(0, bFoundValidLoc ? TeleportSplineValidMaterial : TeleportSplineInvalidMaterial);
+				SplineMeshes[0]->SetMaterial(0, bFoundValidLoc ? TeleportSplineStartingValidMaterial : TeleportSplineStartingInvalidMaterial);
 				SplineMeshes[ArrayIndex]->SetStartAndEnd(SplinePoints[ArrayIndex],
 					ArcSpline->GetTangentAtSplinePoint(ArrayIndex, ESplineCoordinateSpace::Local),
 					SplinePoints[ArrayIndex + 1],
@@ -367,7 +352,7 @@ void ATeleportController::Tick(float DeltaTime)
 		TraceTeleportDestination(bSuccess,TracePoints,NavMeshLocation,TraceLocation);
 		IsValidTeleportDestination = bSuccess;
 
-		// sequence
+		//Sequence 0
 		TeleportCylinder->SetVisibility(IsValidTeleportDestination,true);
 		if(IsValidTeleportDestination)
 		{
@@ -382,9 +367,15 @@ void ATeleportController::Tick(float DeltaTime)
 		}
 
 		//Sequence 1
-		if((IsValidTeleportDestination && !bLastFrameValidDestination) || (!IsValidTeleportDestination && bLastFrameValidDestination))
+		//Play Haptics
+		if(IsValidTeleportDestination && !bLastFrameValidDestination)
 		{
-			RumbleController(HapticEffect,RumbleControllerIntensity);
+			RumbleController(ValidTeleportHaptic,RumbleControllerIntensity);
+		}
+
+		if(!IsValidTeleportDestination && bLastFrameValidDestination)
+		{
+			RumbleController(InvalidTeleportHaptic,RumbleControllerIntensity);
 		}
 
 		//Sequence 2
@@ -492,7 +483,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 
 				if(CurrentFrameHitActor!=nullptr && CurrentFrameHitActor->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass()))
 				{
-					RumbleController(LaserHapticEffect,RumbleControllerIntensity);
+					RumbleController(LaserHoverHaptic,RumbleControllerIntensity);
 				}
 			}
 			
@@ -528,7 +519,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 
 				if(CurrentFrameHitActor!=nullptr && CurrentFrameHitActor->GetClass()->ImplementsInterface(UVRGripInterface::StaticClass()))
 				{
-					RumbleController(LaserHapticEffect,RumbleControllerIntensity);
+					RumbleController(LaserHoverHaptic,RumbleControllerIntensity);
 				}
 			}
 			LaserBeam->SetWorldLocation(TeleWorldLoc);

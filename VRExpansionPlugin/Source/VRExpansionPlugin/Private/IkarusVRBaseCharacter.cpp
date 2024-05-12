@@ -105,6 +105,9 @@ AIkarusVRBaseCharacter::AIkarusVRBaseCharacter()
 void AIkarusVRBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(UGameplayStatics::GetPlatformName() == "Android") bIsMobile = true;
+	
 	SetGripComponents(LeftGrabSphere, RightGrabSphere);
 
 	//Camera Fade
@@ -114,27 +117,31 @@ void AIkarusVRBaseCharacter::BeginPlay()
 	//Spawn Spectator if using
 	if(bEnableSmoothSpectator)
 	{
-
 		FTimerHandle SpecSpawnTimer;
-		GetWorldTimerManager().SetTimer(SpecSpawnTimer, this, &ThisClass::SpawnSpectator, 1.f);
+		GetWorldTimerManager().SetTimer(SpecSpawnTimer, this, &ThisClass::SpawnSpectator, 0.1f);
 	}
 
 	//Inputs Mapping.
 	MapInput(VRInputMapping,0);
 
 	VRMovementReference->PhysCustom_ClimbingDelegate.AddDynamic(this, &ThisClass::UpdateClimbingMovement_Binding);
-		
+	
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(TrackingOrigin);
 	
 	SpawnController();
 
-	if(CheckXRApi() == "OpenXR")
+	// Spawn Grasping hands if possible otherwise use default controllers
+	if(CheckXRApi() == "OpenXR" && UseGraspingHandsWhenPossible)
 	{
+		HandMeshLeft->SetRelativeTransform(TransformOffsets.LeftHandOffset);
+		HandMeshRight->SetRelativeTransform(TransformOffsets.RightHandOffset);
 		SpawnGraspingHands();
 		bUsingGraspingHands = true;
 	}
 	else
 	{
+		HandMeshLeft->SetRelativeTransform(TransformOffsets.LeftControllerOffset);
+		HandMeshRight->SetRelativeTransform(TransformOffsets.RightControllerOffset);
 		EnableControllerAnimations();
 		bUsingGraspingHands = false;
 	}
@@ -273,7 +280,6 @@ void AIkarusVRBaseCharacter::LeftGripStarted()
 		}
 	}
 	TriggerGripOrDrop(LeftMotionController,RightMotionController,true,LeftHandGripComponent);
-	
 }
 
 void AIkarusVRBaseCharacter::LeftGripCompleted()
@@ -283,7 +289,6 @@ void AIkarusVRBaseCharacter::LeftGripCompleted()
 		ExitClimbing();
 	}
 	TriggerGripOrDrop(LeftMotionController,RightMotionController,false,LeftHandGripComponent);
-	
 }
 
 void AIkarusVRBaseCharacter::HandleTurn(const FInputActionValue& InputAxis)
@@ -304,12 +309,26 @@ void AIkarusVRBaseCharacter::HandleMove(const FInputActionValue& Input)
 
 void AIkarusVRBaseCharacter::HandleLeftTeleportedRotation(const FInputActionValue& Input)
 {
-	if(TeleportControllerRight) UpdateTeleportationRotations(TeleportControllerRight, Input.Get<FVector2d>());
+	RightSmoothTeleportRotator = UKismetMathLibrary::Vector2DInterpTo(RightSmoothTeleportRotator, Input.Get<FVector2d>(), GetWorld()->GetDeltaSeconds(), 5.f);
+	if(TeleportControllerRight) UpdateTeleportationRotations(TeleportControllerRight, RightSmoothTeleportRotator);
+}
+
+void AIkarusVRBaseCharacter::HandleLeftTeleportedRotationCompleted(const FInputActionValue& Input)
+{
+	RightSmoothTeleportRotator = FVector2D::Zero();
+	if(TeleportControllerRight) UpdateTeleportationRotations(TeleportControllerRight, RightSmoothTeleportRotator);
 }
 
 void AIkarusVRBaseCharacter::HandleRightTeleportedRotation(const FInputActionValue& Input)
 {
-	if(TeleportControllerLeft) UpdateTeleportationRotations(TeleportControllerLeft, Input.Get<FVector2d>());
+	LeftSmoothTeleportRotator = UKismetMathLibrary::Vector2DInterpTo(LeftSmoothTeleportRotator, Input.Get<FVector2d>(), GetWorld()->GetDeltaSeconds(), 5.f);
+	if(TeleportControllerLeft) UpdateTeleportationRotations(TeleportControllerLeft, LeftSmoothTeleportRotator);
+}
+
+void AIkarusVRBaseCharacter::HandleRightTeleportedRotationCompleted(const FInputActionValue& Input)
+{
+	LeftSmoothTeleportRotator = FVector2D::Zero();
+	if(TeleportControllerLeft) UpdateTeleportationRotations(TeleportControllerLeft, LeftSmoothTeleportRotator);
 }
 
 void AIkarusVRBaseCharacter::HandleLaserBeamRight()
@@ -433,11 +452,10 @@ bool AIkarusVRBaseCharacter::TryToGrabObject(UObject* ObjectToTryToGrab, FTransf
 				}
 
 				/*
-				 if you are facing gripping related bugs then use the commented functions below and comment the rest. Good Luck!
+				 if you are facing gripping related bugs then use the commented functions below and comment the rest below. Good Luck!
 				 */
 				
-				//Drop Object
-				// OtherHand->DropObject(ObjectToTryToGrab);
+				//OtherHand->DropObject(ObjectToTryToGrab);
 				
 				FGameplayTagContainer RelevantGameplayTagCont;
 				RelevantGameplayTagCont.AddTag(DropType_OnPrimaryGripRelease);
@@ -1779,7 +1797,7 @@ void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionCo
 		{
 			IsTeleporting = true;
 			APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
-			CameraManager->StartCameraFade(0.f, 1.f, FadeOutDuration, TeleportFadeColor, false, true);
+			CameraManager->StartCameraFade(0.f, 1.f, bIsMobile ? 0.01f : FadeOutDuration, TeleportFadeColor, false, true);
 
 
 			FVector TeleportLocation;
@@ -1796,7 +1814,7 @@ void AIkarusVRBaseCharacter::ExecuteTeleportation(ATeleportController * MotionCo
 			TeleportLocationForFade = OutLocation;
 			TeleportRotationForFade = OutRotation;
 			
-			GetWorld()->GetTimerManager().SetTimer(FadeTimer, this, &AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime, FadeOutDuration, false);
+			GetWorld()->GetTimerManager().SetTimer(FadeTimer, this, &AIkarusVRBaseCharacter::DelayFunctionRunAfterFadeTime, bIsMobile ? 0.01f : FadeOutDuration, false);
 		}
 		else
 		{
@@ -2023,10 +2041,10 @@ void AIkarusVRBaseCharacter::SpawnSpectator()
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Owner = this;
 		
-	if(AVRSpectator* Spectator = GetWorld()->SpawnActor<AVRSpectator>(SpawnParameters))
+	if(const AVRSpectator* Spectator = GetWorld()->SpawnActor<AVRSpectator>(SpawnParameters))
 	{
 		Spectator->SceneCapture->TextureTarget = RenderTarget;
-		Spectator->FieldOfView = SpectatorFOV;
+		Spectator->SceneCapture->FOVAngle = SpectatorFOV;
 		UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(ESpectatorScreenMode::Texture);
 		UTexture* Texture = Cast<UTexture>(Spectator->SceneCapture->TextureTarget);
 		UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenTexture(Texture);
