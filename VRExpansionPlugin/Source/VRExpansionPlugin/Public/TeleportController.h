@@ -31,25 +31,25 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Laser)
 	void SetLaserBeamActive(bool bLaserBeamActive);
 
-	UFUNCTION(BlueprintCallable, Category = Laser)
+	UFUNCTION()
 	void UpdateLaserBeam(const float& Deltatime);
 
-	UFUNCTION(BlueprintCallable, Category = Laser)
+	UFUNCTION()
 	void CreateLaserSpline();
 
 	UFUNCTION(BlueprintCallable)
 	bool IfOverWidgetUse(bool bPressed,bool bIsHandInteracting=false);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void InitController();
 
 	UFUNCTION(BlueprintCallable)
 	void ToggleTick();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void ClearLaserBeam();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void FilterGrabSpline(TArray<FVector>& Locations, FVector& Target);
 
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
@@ -60,9 +60,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
 	void ActivateTeleporter();
-
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = Components)
-	USplineMeshComponent* MySplineMeshComponent;
 	
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
 	void DeactivateTeleporter();
@@ -70,13 +67,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
 	void TraceTeleportDestination(bool& bSuccess, TArray<FVector>& TracePoints, FVector& NavMeshLocation, FVector& TraceLocation);
 	
-	UFUNCTION(BlueprintCallable, Category = Teleportation)
+	UFUNCTION()
 	void ClearArc();
 	
-	UFUNCTION(BlueprintCallable, Category = Teleportation)
+	UFUNCTION()
 	void UpdateArcSpline(bool bFoundValidLoc, TArray<FVector> SplinePoints);
 	
-	UFUNCTION(BlueprintCallable, Category = Teleportation)
+	UFUNCTION()
 	void UpdateArcEndpoint(const FVector& NewLoc, bool bValidLocFound);
 	
 	UFUNCTION(BlueprintCallable, Category = Teleportation)
@@ -97,18 +94,9 @@ public:
 
 	UPROPERTY()
 	AActor* CurrentFrameHitActor = nullptr;
-	
-	UPROPERTY(EditDefaultsOnly,Category = "LaserBeam")
-	float LaserBeamTraceOffset;
-	
-	UPROPERTY(EditDefaultsOnly,Category = "LaserBeam")
-	bool EnableDebugMode = false;
 
-	UPROPERTY(BlueprintReadOnly,Category = "LaserBeam")
+	UPROPERTY(BlueprintReadOnly,Category = "Laser")
 	FHitResult LaserBeamHitResult;
-	
-	UPROPERTY(EditDefaultsOnly,Category = "LaserBeam")
-	TEnumAsByte<ETraceTypeQuery> LaserBeamTraceChannel;
 	
 	UPROPERTY(BlueprintReadWrite,Category = "Defaults")
 	bool bLastFrameValidDestination = false;
@@ -116,10 +104,10 @@ public:
 	UPROPERTY(BlueprintReadOnly,Category = "Defaults")
 	bool IsValidTeleportDestination;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components, meta = (ExposeOnSpawn = "True"))
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components, meta = (ExposeOnSpawn = "True"))
 	UGripMotionControllerComponent* OwningMotionController;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	bool bIsLocal;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
@@ -131,7 +119,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	FRotator TeleportBaseRotation;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
 	bool bIsLaserBeamActive = false;
 	
 	
@@ -159,6 +147,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components)
 	UStaticMeshComponent* ArcEndPoint;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = Components)
+	USplineMeshComponent* MySplineMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = Components)
 	UStaticMeshComponent* LaserBeamEndPoint;
@@ -192,70 +183,96 @@ private:
 	 */
 
 	// Material Instances Variables :- 
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	UMaterialInstance * TeleportSplineStartingMaterial = NULL;
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Materials")
+	UMaterialInstance * TeleportSplineStartingValidMaterial = NULL;
 
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Materials")
+	UMaterialInstance * TeleportSplineStartingInvalidMaterial = NULL;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Materials")
+	UMaterialInstance * TeleportSplineValidMaterial = NULL;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Materials")
+	UMaterialInstance * TeleportSplineInvalidMaterial = NULL;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Materials")
 	UMaterialInstance * SmoothLaserBeamMaterial = NULL;
-	
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+
+
+	// Haptics Variables :- 
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Haptics")
 	float RumbleControllerIntensity = 1.0f;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Haptics")
+	UHapticFeedbackEffect_Base * LaserHoverHaptic = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	UHapticFeedbackEffect_Base * HapticEffect = nullptr;
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Haptics")
+	UHapticFeedbackEffect_Base * ValidTeleportHaptic = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Haptics")
+	UHapticFeedbackEffect_Base * InvalidTeleportHaptic = nullptr;
 	
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	UHapticFeedbackEffect_Base * LaserHapticEffect = nullptr;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Properties | Tracing")
 	FVector TraceEndLocation = FVector(0,0,-200.0);
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	bool bUseSmoothLaser = true;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float LaserBeamMaxDistance = 5000.f;
+	UPROPERTY(EditDefaultsOnly,Category = "Properties | Tracing")
+	TEnumAsByte<ECollisionChannel> TeleportTraceChannel = ECC_WorldStatic;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float LaserBeamRadius = 1.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	int32 NumberOfLaserSplinePoints = 10;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float TeleportLaunchSpeed = 1200.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float ProjectNavExtends = 500.f;
-
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	FHitResult LastLaserHitResult;
-
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	FRotator InitialControllerRotation;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Tracing")
 	FRotator ControllerRotationOffset = FRotator(-60.f, 0.f, 0.f);
 
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	FVector LastValidTeleportLocation;
+	UPROPERTY(EditDefaultsOnly,Category = "Properties | Laser")
+	TEnumAsByte<ETraceTypeQuery> LaserBeamTraceChannel;
 
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	float ClosestDist;
-
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	int32 ClosestIndex;
-
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	TArray<USplineMeshComponent*> SplineMeshes;
+	UPROPERTY(EditDefaultsOnly,Category = "Properties | Laser")
+	float LaserBeamTraceOffset = 10.f;
 	
-	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
-	FBPEuroLowPassFilter LowPassFilter ;
+	UPROPERTY(EditDefaultsOnly,Category = "Properties | Laser")
+	bool bEnableDebugMode = false;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Properties | Laser")
+	bool bUseSmoothLaser = false;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Laser")
+	float LaserBeamMaxDistance = 1000.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Laser")
+	float LaserBeamRadius = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Laser")
+	int32 NumberOfLaserSplinePoints = 10;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Teleport")
+	float TeleportLaunchSpeed = 1200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Teleport")
+	float ProjectNavExtends = 500.f;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Properties | Tracing")
+	FHitResult LastLaserHitResult;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Properties | Teleport")
+	FVector LastValidTeleportLocation;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties | Laser")
+	FBPEuroLowPassFilter LowPassFilter;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties")
+	TArray<USplineMeshComponent*> SplineMeshes;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Properties")
 	TArray<USplineMeshComponent*> LaserSplineMeshes;
 
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "True"), Category = "Defaults")
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "True"), Category = "Properties")
+	FRotator InitialControllerRotation;
+
+	UPROPERTY()
+	float ClosestDist;
+
+	UPROPERTY()
+	int32 ClosestIndex;
+	
+	UPROPERTY()
 	int32 PointDiffNum;
 
 	void Print(FString Message,int key = 1 ,FColor Color  =FColor::Red);
