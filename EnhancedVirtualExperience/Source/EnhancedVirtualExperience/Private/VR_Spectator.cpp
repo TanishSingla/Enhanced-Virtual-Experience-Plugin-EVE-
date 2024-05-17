@@ -1,5 +1,5 @@
 ﻿
-#include "VRSpectator.h"
+#include "VR_Spectator.h"
 
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
@@ -8,7 +8,7 @@
 #include "Kismet/KismetMathLibrary.h"
 
 
-AVRSpectator::AVRSpectator()
+AVR_Spectator::AVR_Spectator()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	
@@ -19,7 +19,7 @@ AVRSpectator::AVRSpectator()
 	SceneCapture->CaptureSource = SCS_FinalColorLDR;
 }
 
-void AVRSpectator::BeginPlay()
+void AVR_Spectator::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -27,7 +27,7 @@ void AVRSpectator::BeginPlay()
 	EnableSpectator();
 }
 
-void AVRSpectator::EnableSpectator()
+void AVR_Spectator::EnableSpectator()
 {
 	SetActorTickEnabled(true);
 	
@@ -45,14 +45,14 @@ void AVRSpectator::EnableSpectator()
 	}
 }
 
-void AVRSpectator::DisableSpectator()
+void AVR_Spectator::DisableSpectator()
 {
 	SetActorTickEnabled(false);
 	UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(ESpectatorScreenMode::SingleEyeCroppedToFill);
 	SceneCapture->bCaptureEveryFrame = false;
 }
 
-void AVRSpectator::DisableIfMobile()
+void AVR_Spectator::DisableIfMobile()
 {
 	if(UGameplayStatics::GetPlatformName() == "Android")
 	{
@@ -60,7 +60,7 @@ void AVRSpectator::DisableIfMobile()
 	}
 }
 
-void AVRSpectator::HandleSpectatorFPV()
+void AVR_Spectator::HandleSpectatorFPV()
 {
 	const FVector SmoothLoc = UKismetMathLibrary::VInterpTo(GetActorLocation(), UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->GetCameraLocation(),
 		GetWorld()->GetDeltaSeconds(), 5.f);
@@ -70,7 +70,7 @@ void AVRSpectator::HandleSpectatorFPV()
 	SetActorLocationAndRotation(SmoothLoc, SmoothRot);
 }
 
-void AVRSpectator::SetSpectatorMode()
+void AVR_Spectator::SetSpectatorMode()
 {
 	TArray<UCameraComponent*> CameraComps;
 	UGameplayStatics::GetPlayerPawn(GetWorld(), 0)->GetComponents(CameraComps);
@@ -94,7 +94,7 @@ void AVRSpectator::SetSpectatorMode()
 	
 }
 
-void AVRSpectator::Tick(float DeltaTime)
+void AVR_Spectator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 

@@ -4,11 +4,12 @@
 #include "CoreMinimal.h"
 #include "VRCharacter.h"
 #include "HeadMountedDisplayTypes.h"
-#include "TeleportController.h"
+#include "VR_TeleportController.h"
 #include "InputActionValue.h"
 #include "GameplayTags.h"
-#include "IkarusVRBaseCharacter.generated.h"
+#include "EVE_Character.generated.h"
 
+class AVR_TeleportController;
 class UInputAction;
 class UInputMappingContext;
 class USphereComponent;
@@ -17,38 +18,38 @@ class USphereComponent;
 /* ********************************************************************** */
 
 USTRUCT(BlueprintType)
-struct FControllerHandTransformOffset
+struct FControllerHandTransformOffsets
 {
 	GENERATED_BODY()
 
-	FControllerHandTransformOffset() {}
+	FControllerHandTransformOffsets() {}
 
 	// Constructor initializing with four transforms
-	FControllerHandTransformOffset(const FTransform& LeftControllerOffset, const FTransform& RightControllerOffset, const FTransform& LeftHandOffset, const FTransform& RightHandOffset)
+	FControllerHandTransformOffsets(const FTransform& LeftControllerOffset, const FTransform& RightControllerOffset, const FTransform& LeftHandOffset, const FTransform& RightHandOffset)
 		: LeftControllerOffset(LeftControllerOffset), RightControllerOffset(RightControllerOffset), LeftHandOffset(LeftHandOffset), RightHandOffset(RightHandOffset) {}
 
 	// Four transforms
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FTransform LeftControllerOffset;
+	FTransform LeftControllerOffset = FTransform(FRotator(-60.f, 0.f, 0.f),FVector(5.162f, 0.f, -2.605f), FVector(1.f));
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FTransform RightControllerOffset;
+	FTransform RightControllerOffset = FTransform(FRotator(-60.f, 0.f, 0.f),FVector(5.162f, 0.f, -2.605f), FVector(1.f));
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FTransform LeftHandOffset;
+	FTransform LeftHandOffset = FTransform(FRotator(-66.702f, 9.914f, 79.450f), FVector(-2.62f, -2.34f, 4.006f), FVector(1.f, 1.f, -1.f));
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FTransform RightHandOffset;
+	FTransform RightHandOffset = FTransform(FRotator(-66.702f, 9.914f, 79.450f), FVector(-2.62f, 2.34f, 4.006f), FVector(1.f));
 };
 
 UCLASS()
-class VREXPANSIONPLUGIN_API AIkarusVRBaseCharacter : public AVRCharacter
+class ENHANCEDVIRTUALEXPERIENCE_API AEVE_Character : public AVRCharacter
 {
 	GENERATED_BODY()
 
 public:
 	
-	AIkarusVRBaseCharacter();
+	AEVE_Character();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
@@ -197,7 +198,7 @@ protected:
 	bool UseGraspingHandsWhenPossible = true;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Character Properties | Properties")
-	FControllerHandTransformOffset TransformOffsets;
+	FControllerHandTransformOffsets TransformOffsets;
 	
 	UPROPERTY(EditDefaultsOnly,Category="Character Properties | Properties | Tracking Origin")
 	TEnumAsByte<EHMDTrackingOrigin::Type> TrackingOrigin = EHMDTrackingOrigin::Floor;
@@ -212,13 +213,13 @@ protected:
 	UTextureRenderTarget2D* RenderTarget;
 
 	UPROPERTY(BlueprintReadOnly,Category="Teleport Controllers")
-	ATeleportController * TeleportControllerLeft;
+	AVR_TeleportController * TeleportControllerLeft;
 
 	UPROPERTY(BlueprintReadOnly,Category="Teleport Controllers")
-	ATeleportController * TeleportControllerRight;
+	AVR_TeleportController * TeleportControllerRight;
 
 	UPROPERTY(EditDefaultsOnly,Category="Character Properties | Properties | CharacterMovement | Teleportation")
-	TSubclassOf<ATeleportController> TeleportControllerClass;
+	TSubclassOf<AVR_TeleportController> TeleportControllerClass;
 
 	UPROPERTY(BlueprintReadWrite,Category="Properties | Teleportation")
 	bool IsTeleporting = false;
@@ -448,13 +449,13 @@ protected:
 	void InitTeleportControllers();
 
 	UFUNCTION(BlueprintCallable,Category="Character Properties | Functions  | Teleportation")
-	void UpdateTeleportationRotations(ATeleportController* TeleportController, FVector2D Input);
+	void UpdateTeleportationRotations(AVR_TeleportController* TeleportController, FVector2D Input);
 
 	UFUNCTION()
 	void SetTeleportActive(EControllerHand Hand,bool Active);
 
 	UFUNCTION(BlueprintCallable,Category="Character Properties | Functions  | Teleportation")
-	void ExecuteTeleportation(ATeleportController * MotionController,EControllerHand Hand);
+	void ExecuteTeleportation(AVR_TeleportController * MotionController,EControllerHand Hand);
 
 	UFUNCTION()
 	void GetCharacterRotatedPosition(const FVector& OriginalLocation, const FRotator& DeltaRotation,FVector PivotPoint,FVector &OutLocation,FRotator &OutRotation);

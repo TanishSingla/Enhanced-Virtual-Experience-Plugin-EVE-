@@ -1,0 +1,33 @@
+﻿{
+	"FileVersion": 3,
+	"Version": 5.3,
+	"VersionName": "5.3",
+	"FriendlyName": "EnhancedVirtualExperience",
+	"Description": "Designed to serve as a foundational tool for any VR project",
+	"Category": "VRExpansion",
+	"CreatedBy": "Ikarus",
+	"CreatedByURL": "https://github.com/TanishSingla/Enhanced-Virtual-Experience-Plugin-EVE-",
+	"DocsURL": "https://docs.google.com/document/d/1YUKypYo-mNWKONceBwLo9VeZOQVTERbOSpwB3DJOyus/edit?usp=sharing",
+	"MarketplaceURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"SupportedTargetPlatforms": [
+		"Win64",
+		"Android"
+	],
+	"Modules": [
+		{
+			"Name": "EnhancedVirtualExperience",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "VRExpansionPlugin",
+			"Enabled": true
+		}
+	]
+}

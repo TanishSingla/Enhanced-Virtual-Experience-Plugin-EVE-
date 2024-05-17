@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "VRBPDatatypes.h"
 #include "GameFramework/Actor.h"
-#include "TeleportController.generated.h"
+#include "VR_TeleportController.generated.h"
 
 class UPhysicsTossManager;
 struct FBPEuroLowPassFilter;
@@ -12,13 +12,13 @@ class USplineMeshComponent;
 class UWidgetInteractionComponent;
 
 UCLASS()
-class VREXPANSIONPLUGIN_API ATeleportController : public AActor
+class ENHANCEDVIRTUALEXPERIENCE_API AVR_TeleportController : public AActor
 {
 	GENERATED_BODY()
 
 public:
 
-	ATeleportController();
+	AVR_TeleportController();
 	
 	virtual void Tick(float DeltaTime) override;
 

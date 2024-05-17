@@ -1,5 +1,5 @@
-﻿
-#include "TeleportController.h"
+﻿#include "VR_TeleportController.h"
+#include "EVE_Character.h"
 #include "GripMotionControllerComponent.h"
 #include "VRExpansionFunctionLibrary.h"
 #include "Components/SplineComponent.h"
@@ -10,11 +10,10 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "NavigationSystem.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
-#include "IkarusVRBaseCharacter.h"
 #include "Grippables/GrippableStaticMeshComponent.h"
 
 
-ATeleportController::ATeleportController()
+AVR_TeleportController::AVR_TeleportController()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -95,7 +94,7 @@ ATeleportController::ATeleportController()
 	LowPassFilter.CutoffSlope = 0.001f;
 }
 
-void ATeleportController::BeginPlay()
+void AVR_TeleportController::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -103,7 +102,7 @@ void ATeleportController::BeginPlay()
 	SetActorTickEnabled(true);
 }
 
-void ATeleportController::OnTeleportControllerClassConstructed()
+void AVR_TeleportController::OnTeleportControllerClassConstructed()
 {
 	/*  */
 	
@@ -129,8 +128,8 @@ void ATeleportController::OnTeleportControllerClassConstructed()
 			APlayerController * PlayerController = UGameplayStatics::GetPlayerController(GetWorld(),0);
 			EnableInput(PlayerController);
 
-			const AIkarusVRBaseCharacter * IkarusBaseChar = Cast<AIkarusVRBaseCharacter>(OwningMotionController->GetOwner());
-			if(IsValid(IkarusBaseChar))
+			const AEVE_Character * BaseChar = Cast<AEVE_Character>(OwningMotionController->GetOwner());
+			if(IsValid(BaseChar))
 			{
 				SetOwner(OwningMotionController->GetOwner());
 			}
@@ -138,7 +137,7 @@ void ATeleportController::OnTeleportControllerClassConstructed()
 	}
 }
 
-void ATeleportController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AVR_TeleportController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	
@@ -148,7 +147,7 @@ void ATeleportController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	
 }
 
-void ATeleportController::GetTeleWorldLocAndForwardVector(FVector& WorldLoc, FVector& ForwardVector, bool bUseRotOffset)
+void AVR_TeleportController::GetTeleWorldLocAndForwardVector(FVector& WorldLoc, FVector& ForwardVector, bool bUseRotOffset)
 {
 	WorldLoc = OwningMotionController->GetComponentLocation();
 	ForwardVector = bUseRotOffset ? 
@@ -158,7 +157,7 @@ void ATeleportController::GetTeleWorldLocAndForwardVector(FVector& WorldLoc, FVe
 		OwningMotionController->GetComponentRotation()));
 }
 
-void ATeleportController::ActivateTeleporter()
+void AVR_TeleportController::ActivateTeleporter()
 {
 	bIsTeleporterActive = true;
 	
@@ -169,7 +168,7 @@ void ATeleportController::ActivateTeleporter()
 	}
 }
 
-void ATeleportController::DeactivateTeleporter()
+void AVR_TeleportController::DeactivateTeleporter()
 {
 	if(bIsTeleporterActive)
 	{
@@ -181,7 +180,7 @@ void ATeleportController::DeactivateTeleporter()
 	}
 }
 
-void ATeleportController::TraceTeleportDestination(bool& bSuccess, TArray<FVector>& TracePoints,
+void AVR_TeleportController::TraceTeleportDestination(bool& bSuccess, TArray<FVector>& TracePoints,
 	FVector& NavMeshLocation, FVector& TraceLocation)
 {
 	FVector TeleWorldLoc;
@@ -216,7 +215,7 @@ void ATeleportController::TraceTeleportDestination(bool& bSuccess, TArray<FVecto
 	
 }
 
-void ATeleportController::ClearArc()
+void AVR_TeleportController::ClearArc()
 {
 	for(const auto Mesh : SplineMeshes)
 	{
@@ -226,7 +225,7 @@ void ATeleportController::ClearArc()
 	ArcSpline->ClearSplinePoints(true);
 }
 
-void ATeleportController::UpdateArcSpline(bool bFoundValidLoc,  TArray<FVector> SplinePoints)
+void AVR_TeleportController::UpdateArcSpline(bool bFoundValidLoc,  TArray<FVector> SplinePoints)
 {
 	ArcSpline->ClearSplinePoints(true);
 	
@@ -300,14 +299,14 @@ void ATeleportController::UpdateArcSpline(bool bFoundValidLoc,  TArray<FVector> 
 	}
 }
 
-void ATeleportController::UpdateArcEndpoint(const FVector& NewLoc, bool bValidLocFound)
+void AVR_TeleportController::UpdateArcEndpoint(const FVector& NewLoc, bool bValidLocFound)
 {
 	ArcEndPoint->SetVisibility(bIsTeleporterActive && bValidLocFound);
 	ArcEndPoint->SetWorldLocation(NewLoc,false, nullptr, ETeleportType::TeleportPhysics);
 	Arrow->SetWorldRotation(UKismetMathLibrary::ComposeRotators(TeleportRotation,TeleportBaseRotation));
 }
 
-void ATeleportController::GetTeleportDestination(bool RelativeToHMD, FVector& Location, FRotator& Rotation)
+void AVR_TeleportController::GetTeleportDestination(bool RelativeToHMD, FVector& Location, FRotator& Rotation)
 {
 	if(RelativeToHMD)
 	{
@@ -327,7 +326,7 @@ void ATeleportController::GetTeleportDestination(bool RelativeToHMD, FVector& Lo
 	}
 }
 
-void ATeleportController::RumbleController(UHapticFeedbackEffect_Base * HapticEff,float Intensity)
+void AVR_TeleportController::RumbleController(UHapticFeedbackEffect_Base * HapticEff,float Intensity)
 {
 	if(IsValid(OwningMotionController))
 	{
@@ -337,7 +336,7 @@ void ATeleportController::RumbleController(UHapticFeedbackEffect_Base * HapticEf
 	}
 }
 
-void ATeleportController::Tick(float DeltaTime)
+void AVR_TeleportController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	UpdateLaserBeam(DeltaTime);
@@ -390,12 +389,12 @@ void ATeleportController::Tick(float DeltaTime)
 	
 }
 
-void ATeleportController::ServerSideToss(UPrimitiveComponent* TargetObject)
+void AVR_TeleportController::ServerSideToss(UPrimitiveComponent* TargetObject)
 {
 	
 }
 
-void ATeleportController::SetLaserBeamActive(bool bLaserBeamActive)
+void AVR_TeleportController::SetLaserBeamActive(bool bLaserBeamActive)
 {
 	if(bLaserBeamActive != bIsLaserBeamActive)
 	{
@@ -431,7 +430,7 @@ void ATeleportController::SetLaserBeamActive(bool bLaserBeamActive)
 	}
 }
 
-void ATeleportController::UpdateLaserBeam(const float& Deltatime)
+void AVR_TeleportController::UpdateLaserBeam(const float& Deltatime)
 {
 	if(bIsLaserBeamActive)
 	{
@@ -545,7 +544,7 @@ void ATeleportController::UpdateLaserBeam(const float& Deltatime)
 	}
 }
 
-void ATeleportController::CreateLaserSpline()
+void AVR_TeleportController::CreateLaserSpline()
 {
 	if(bUseSmoothLaser)
 	{
@@ -576,7 +575,7 @@ void ATeleportController::CreateLaserSpline()
 	}
 }
 
-bool ATeleportController::IfOverWidgetUse(bool bPressed,bool bIsHandInteracting)
+bool AVR_TeleportController::IfOverWidgetUse(bool bPressed,bool bIsHandInteracting)
 {
 	if(bIsLaserBeamActive || bIsHandInteracting)
 	{
@@ -599,7 +598,7 @@ bool ATeleportController::IfOverWidgetUse(bool bPressed,bool bIsHandInteracting)
 	
 }
 
-void ATeleportController::InitController()
+void AVR_TeleportController::InitController()
 {
 	if(bIsLocal)
 	{
@@ -623,12 +622,12 @@ void ATeleportController::InitController()
 	}
 }
 
-void ATeleportController::ToggleTick()
+void AVR_TeleportController::ToggleTick()
 {
 	SetActorTickEnabled(bIsLaserBeamActive || bIsTeleporterActive || IsValid(ActorBeingThrown));
 }
 
-void ATeleportController::ClearLaserBeam()
+void AVR_TeleportController::ClearLaserBeam()
 {
 	for(const auto Mesh : LaserSplineMeshes)
 	{
@@ -638,7 +637,7 @@ void ATeleportController::ClearLaserBeam()
 	LaserSpline->ClearSplinePoints(true);
 }
 
-void ATeleportController::FilterGrabSpline(TArray<FVector>& Locations, FVector& Target)
+void AVR_TeleportController::FilterGrabSpline(TArray<FVector>& Locations, FVector& Target)
 {
 	if(Locations.Num() > 1)
 	{
@@ -664,7 +663,7 @@ void ATeleportController::FilterGrabSpline(TArray<FVector>& Locations, FVector& 
 	}
 }
 
-void ATeleportController::DisableWidgetActivation()
+void AVR_TeleportController::DisableWidgetActivation()
 {
 	FHitResult HitResult;
 	Wic->SetCustomHitResult(HitResult);
@@ -672,13 +671,13 @@ void ATeleportController::DisableWidgetActivation()
 }
 
 
-void ATeleportController::Print(FString Message,int key,FColor Color)
+void AVR_TeleportController::Print(FString Message,int key,FColor Color)
 {
 	if(GEngine)
 		GEngine->AddOnScreenDebugMessage(key, 2, Color, Message);
 }
 
-void ATeleportController::Print(int Message, int key, FColor Color)
+void AVR_TeleportController::Print(int Message, int key, FColor Color)
 {
 	FString NumAsString = FString::FromInt(Message);
 	if(GEngine)

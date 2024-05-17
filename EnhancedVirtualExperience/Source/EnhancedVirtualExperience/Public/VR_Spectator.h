@@ -2,15 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "VRSpectator.generated.h"
+#include "VR_Spectator.generated.h"
 
 UCLASS()
-class VREXPANSIONPLUGIN_API AVRSpectator : public AActor
+class ENHANCEDVIRTUALEXPERIENCE_API AVR_Spectator : public AActor
 {
 	GENERATED_BODY()
 
 public:
-	AVRSpectator();
+	AVR_Spectator();
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Components)
